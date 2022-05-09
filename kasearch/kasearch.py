@@ -6,7 +6,7 @@ from kasearch.identity_calculations import get_n_most_identical, slow_get_n_most
 
 
 class SearchOAS:
-    def __init__(self, database_path, chain='Heavy', allowed_species=None, n_jobs=None):
+    def __init__(self, database_path, chain='Heavy', allowed_species=["Human"], n_jobs=None):
 
         self.database_path = database_path
         self.chain = chain
@@ -53,8 +53,11 @@ class SearchOAS:
         if reset_best == True:
             self.__reset_current_best()
         
-        #self.allowed_files = self.allowed_files[:1]
+        self.__load_data_chunk(self.allowed_files[0])
         
-        for file in self.allowed_files:
-            self.__load_data_chunk(file)
+        for file in self.allowed_files[1:]:
+            p1 = Process(target = self.__load_data_chunk, kwargs = {"path":file})
+            p1.start()
             self.__update_best(query, keep_best_n)
+                
+        self.__update_best(query, keep_best_n)
