@@ -53,7 +53,7 @@ class SearchOAS:
         if reset_best == True:
             self.__reset_current_best()
         
-        self.allowed_files = self.allowed_files[:1]
+        #self.allowed_files = self.allowed_files[:1]
         
         for file in self.allowed_files:
             self.__load_data_chunk(file)
