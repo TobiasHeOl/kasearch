@@ -1,9 +1,9 @@
 import numpy as np
 import os
 import glob
-from multiprocessing import Process
+import concurrent
+import time
 from kasearch.identity_calculations import get_n_most_identical, slow_get_n_most_identical
-
 
 class SearchOAS:
     def __init__(self, database_path, chain='Heavy', allowed_species=["Human"], n_jobs=None):
@@ -26,15 +26,8 @@ class SearchOAS:
         self.allowed_files = []
         for species in allowed_species:
             self.allowed_files += glob.glob(os.path.join(self.database_path, self.chain, species, "*.npz"))
-        
-    def __load_data_chunk(self, path=None):
-        if path is not None:
-            data = np.load(path)
-            self.current_target_numbering = data['numberings']
-            self.current_target_ids = data['idxs']
 
     def __update_best(self, query, keep_best_n):
-        
         chunk_best_identities, chunk_best_ids = get_n_most_identical(query.aligned_query,
                                                                      self.current_target_numbering,
                                                                      self.current_target_ids, 
@@ -53,11 +46,35 @@ class SearchOAS:
         if reset_best == True:
             self.__reset_current_best()
         
-        self.__load_data_chunk(self.allowed_files[0])
+        data_loader = DataLoader(self.allowed_files[0])
+        self.current_target_numbering = data_loader.data['numberings']
+        self.current_target_ids = data_loader.data['idxs']
         
         for file in self.allowed_files[1:]:
-            p1 = Process(target = self.__load_data_chunk, kwargs = {"path":file})
-            p1.start()
+            data_loader = DataLoader(file)
             self.__update_best(query, keep_best_n)
+            self.current_target_numbering = data_loader.data['numberings']
+            self.current_target_ids = data_loader.data['idxs']
                 
         self.__update_best(query, keep_best_n)
+        
+        
+class DataLoader():
+    def __init__(self, file):
+        _pool = concurrent.futures.ThreadPoolExecutor()
+        self.__data = _pool.submit(self.__load_data, file)
+        
+    def __load_data(self, file):
+        data = np.load(file)
+        output = {}
+        output['numberings'] = data['numberings']
+        output['idxs'] = data['idxs']
+        
+        return output
+        
+    @property
+    def data(self):
+        while self.__data.running():  # Want to acess only if it has finished
+            time.sleep(1)
+        return self.__data.result()
+    
