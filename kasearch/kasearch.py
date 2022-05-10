@@ -30,12 +30,6 @@ class SearchOAS:
         
         for species in allowed_species:
             self.allowed_files += glob.glob(os.path.join(self.database_path, allowed_chain, species, "*.npz"))
-        
-    def __load_data_chunk(self, path=None):
-        if path is not None:
-            data = np.load(path)
-            self.current_target_numbering = data['numberings']
-            self.current_target_ids = data['idxs']
 
     def __update_best(self, query, keep_best_n):
         chunk_best_identities, chunk_best_ids = get_n_most_identical(query.aligned_query,
