@@ -39,7 +39,7 @@ def calculate_many_seq_ids(ab1, array_of_abs):
 
 
 def get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
-    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads() - 1
+    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads()
     numba.set_num_threads(n_jobs)
     
     seq_identity_matrix = calculate_many_seq_ids(query, target)
@@ -97,7 +97,7 @@ def slow_calculate_many_seq_ids(ab1, list_of_abs, n_jobs=1):
 
 
 def slow_get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
-    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads() - 1
+    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads()
     seq_identity_matrix = np.array(slow_calculate_many_seq_ids(query, target, n_jobs=n_jobs))
 
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id
