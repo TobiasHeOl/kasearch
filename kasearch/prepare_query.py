@@ -11,7 +11,12 @@ class SetQueries:
     def __init__(self, queries, allowed_species=None, n_jobs=None):
         
         self.n_jobs = n_jobs
-        self.allowed_species = [i.lower() for i in allowed_species]
+        
+        if allowed_species:
+            self.allowed_species = [i.lower() for i in allowed_species]
+        else:
+            self.allowed_species = None
+        
         self.queries = self.__set_queries(queries)
         
         
@@ -25,10 +30,12 @@ class SetQueries:
         return Query(aligned_query, chain)
     
     def __set_queries(self, queries):
-        size = len(queries)
+        
+        if len(queries) <  self.n_jobs:
+            n_jobs = len(queries)
 
-        with Pool(processes=self.n_jobs) as pool:
-            return pool.map(self._set_query, queries, chunksize=size // self.n_jobs)
+        with Pool(processes=n_jobs) as pool:
+            return pool.map(self._set_query, queries, chunksize=len(queries) // n_jobs)
         
         
 @dataclass   

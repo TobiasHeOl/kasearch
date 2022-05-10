@@ -6,26 +6,30 @@ from kasearch.identity_calculations import get_n_most_identical, slow_get_n_most
 
 
 class SearchOAS:
-    def __init__(self, database_path, chain='Heavy', allowed_species=None, n_jobs=None):
+    def __init__(self, database_path, allowed_chain='Heavy', allowed_species=None, n_jobs=None):
 
         self.database_path = database_path
-        self.chain = chain
         self.n_jobs = n_jobs
         
-        self.__set_allowed_files(allowed_species)
-        self.current_target_numbering = None
-        self.current_target_ids = None
+        self.allowed_files = []
+        self.__set_allowed_files(allowed_chain, allowed_species)
+        
         self.__reset_current_best()
     
     def __reset_current_best(self):
         
+        self.current_target_numbering = None
+        self.current_target_ids = None
         self.current_best_identities = np.zeros((1, 3), np.float16) - 1
         self.current_best_ids = np.zeros((1, 3, 2), np.int32) - 1
 
-    def __set_allowed_files(self, allowed_species):
-        self.allowed_files = []
+    def __set_allowed_files(self, allowed_chain, allowed_species):
+        
+        if allowed_species == None: allowed_species = '*'      
+        if allowed_chain == None: allowed_chain = '*'
+        
         for species in allowed_species:
-            self.allowed_files += glob.glob(os.path.join(self.database_path, self.chain, species, "*.npz"))
+            self.allowed_files += glob.glob(os.path.join(self.database_path, allowed_chain, species, "*.npz"))
         
     def __load_data_chunk(self, path=None):
         if path is not None:
@@ -53,7 +57,7 @@ class SearchOAS:
         if reset_best == True:
             self.__reset_current_best()
         
-        #self.allowed_files = self.allowed_files[:1]
+        self.allowed_files = self.allowed_files[:2]
         
         for file in self.allowed_files:
             self.__load_data_chunk(file)
