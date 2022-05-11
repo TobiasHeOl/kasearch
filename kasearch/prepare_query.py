@@ -8,7 +8,7 @@ class SetQueries:
     """
     Prepares queries for KA-Search. 
     """
-    def __init__(self, queries, allowed_species=None, n_jobs=None):
+    def __init__(self, queries, allowed_species=None, n_jobs=1):
         
         self.n_jobs = n_jobs
         
@@ -31,8 +31,7 @@ class SetQueries:
     
     def __set_queries(self, queries):
         
-        if len(queries) <  self.n_jobs:
-            n_jobs = len(queries)
+        n_jobs = len(queries) if len(queries) <  self.n_jobs else self.n_jobs
 
         with Pool(processes=n_jobs) as pool:
             return pool.map(self._set_query, queries, chunksize=len(queries) // n_jobs)

@@ -13,7 +13,7 @@ def calculate_seq_id(ab1, ab2):
     # For the whole sequence:
     full_overlap = np.sum(overlapping_residues)
     full_id = (full_overlap / mask1.sum() + full_overlap / mask2.sum()) / 2
-        
+    
     # For all CDRs
     cdrs_overlap = np.sum(all_cdrs_mask * overlapping_residues)
     cdrs_id = (cdrs_overlap / (mask1 * all_cdrs_mask).sum() + cdrs_overlap / (mask2 * all_cdrs_mask).sum()) / 2
@@ -39,7 +39,7 @@ def calculate_many_seq_ids(ab1, array_of_abs):
 
 
 def get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
-    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads()
+    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads() - 1
     numba.set_num_threads(n_jobs)
     
     seq_identity_matrix = calculate_many_seq_ids(query, target)
@@ -97,7 +97,7 @@ def slow_calculate_many_seq_ids(ab1, list_of_abs, n_jobs=1):
 
 
 def slow_get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
-    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads()
+    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads() - 1
     seq_identity_matrix = np.array(slow_calculate_many_seq_ids(query, target, n_jobs=n_jobs))
 
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id
