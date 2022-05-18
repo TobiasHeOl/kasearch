@@ -26,8 +26,9 @@ def calculate_seq_id(ab1, ab2):
     return full_id, cdrs_id, h3_id
 
 
-@numba.njit(parallel=True, fastmath=True, cache=True)
-def calculate_many_seq_ids(ab1, array_of_abs):
+@numba.njit(parallel=False, fastmath=True, cache=True)
+def calculate_batch_seq_ids(ab1, array_of_abs):
+    
     size = array_of_abs.shape[0]
 
     identities = np.zeros((size, 3))   
@@ -37,12 +38,23 @@ def calculate_many_seq_ids(ab1, array_of_abs):
 
     return identities
 
+def calculate_all_seq_ids(ab1, array_of_abs, n_jobs=1):
+    
+    # Vectorization is quite fast, so only split on larger datasets
+    splits = n_jobs if len(array_of_abs) > 10_000 else 1 
+    
+    split_array_of_abs = np.array_split(array_of_abs, splits)
+    size = len(split_array_of_abs)
+    with Pool(processes=n_jobs) as pool:
+        return np.concatenate(pool.starmap(calculate_batch_seq_ids, zip(size * [ab1], split_array_of_abs)))
+
 
 def get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
-    n_jobs = n_jobs if n_jobs is not None else numba.get_num_threads()
-    numba.set_num_threads(n_jobs)
+    #print(numba.get_num_threads())
+    n_jobs = n_jobs if n_jobs is not None else 1
+    #numba.set_num_threads(n_jobs)
     
-    seq_identity_matrix = calculate_many_seq_ids(query, target)
+    seq_identity_matrix = calculate_all_seq_ids(query, target, n_jobs=n_jobs)
     where_are_NaNs = np.isnan(seq_identity_matrix)
     seq_identity_matrix[where_are_NaNs] = 0
 
