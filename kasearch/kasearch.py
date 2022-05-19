@@ -65,8 +65,6 @@ class SearchOAS:
         
         if reset_best == True:
             self.__reset_current_best()
-
-        self.allowed_files = self.allowed_files[:2]
         
         data_loader = DataLoader(self.allowed_files[0])
         self._current_target_numbering = data_loader.data['numberings']
