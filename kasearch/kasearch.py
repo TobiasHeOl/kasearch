@@ -1,23 +1,23 @@
-import numpy as np
 import os
 import glob
-import concurrent
 import time
+
+import numpy as np
+from concurrent.futures.thread import ThreadPoolExecutor
+
 from kasearch.identity_calculations import get_n_most_identical, slow_get_n_most_identical
 
 class SearchOAS:
     def __init__(self, 
                  database_path, 
                  allowed_chain='Heavy', 
-                 allowed_species=None, 
+                 allowed_species='Any', 
                  n_jobs=None):
         
         self.database_path = database_path
         self.n_jobs = n_jobs
         
-        self.allowed_files = []
         self.__set_allowed_files(allowed_chain, allowed_species)
-        
         self.__reset_current_best()
     
     def __reset_current_best(self):
@@ -29,11 +29,23 @@ class SearchOAS:
 
     def __set_allowed_files(self, allowed_chain, allowed_species):
         
-        if allowed_species == None: allowed_species = '*'      
-        if allowed_chain == None: allowed_chain = '*'
+        self.allowed_files = []
+        self.allowed_weird_files = []
+        
+        if allowed_species == 'Any': allowed_species = '*'
+        allowed_species = [allowed_species] if isinstance(allowed_species, str) else allowed_species
+        if allowed_chain == 'Any': allowed_chain = '*'
         
         for species in allowed_species:
-            self.allowed_files += glob.glob(os.path.join(self.database_path, allowed_chain, species, "*.npz"))
+            
+            self.allowed_files += glob.glob(os.path.join(self.database_path, 
+                                                         allowed_chain, 
+                                                         species, 
+                                                         "*[0-9].npz"))
+            self.allowed_weird_files += glob.glob(os.path.join(self.database_path, 
+                                                               allowed_chain, 
+                                                               species, 
+                                                               "*weird.npz"))
 
     def __update_best(self, query, keep_best_n):
         chunk_best_identities, chunk_best_ids = get_n_most_identical(query.aligned_query,
@@ -71,7 +83,7 @@ class SearchOAS:
         
 class DataLoader():
     def __init__(self, file):
-        _pool = concurrent.futures.ThreadPoolExecutor()
+        _pool = ThreadPoolExecutor()
         self.__data = _pool.submit(self.__load_data, file)
         
     def __load_data(self, file):

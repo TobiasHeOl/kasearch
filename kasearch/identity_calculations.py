@@ -41,12 +41,15 @@ def calculate_batch_seq_ids(ab1, array_of_abs):
 def calculate_all_seq_ids(ab1, array_of_abs, n_jobs=1):
     
     # Vectorization is quite fast, so only split on larger datasets
-    splits = n_jobs if len(array_of_abs) > 10_000 else 1 
+    n_splits = n_jobs if len(array_of_abs) > 10_000 else 1 
     
-    split_array_of_abs = np.array_split(array_of_abs, splits)
-    size = len(split_array_of_abs)
+    split_array_of_abs = np.array_split(array_of_abs, n_splits)
+
     with Pool(processes=n_jobs) as pool:
-        return np.concatenate(pool.starmap(calculate_batch_seq_ids, zip(size * [ab1], split_array_of_abs)))
+        return np.concatenate(pool.starmap(calculate_batch_seq_ids, 
+                                           zip(n_splits * [ab1], split_array_of_abs)
+                                          )
+                             )
 
 
 def get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
