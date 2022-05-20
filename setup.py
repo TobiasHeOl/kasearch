@@ -12,6 +12,9 @@ setup(
     long_description_content_type='text/markdown',
     include_package_data=True,
     packages=find_packages(include=('kasearch', 'kasearch.*')),
+    package_data={
+        '': ['*.txt']
+    },
     install_requires=[
         'numpy',
         'numba',
