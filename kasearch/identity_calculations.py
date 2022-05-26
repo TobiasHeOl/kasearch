@@ -67,11 +67,10 @@ def calculate_all_seq_ids(ab1, array_of_abs):
 
 
 def get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
-    #print(numba.get_num_threads())
     n_jobs = n_jobs if n_jobs is not None else 1
-    #numba.set_num_threads(n_jobs)
+    numba.set_num_threads(n_jobs)
     
-    seq_identity_matrix = calculate_all_seq_ids(query, target, n_jobs=n_jobs)
+    seq_identity_matrix = calculate_all_seq_ids(query, target)
     where_are_NaNs = np.isnan(seq_identity_matrix)
     seq_identity_matrix[where_are_NaNs] = 0
 
