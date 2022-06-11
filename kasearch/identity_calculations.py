@@ -4,8 +4,11 @@ from multiprocessing import Pool
 from kasearch.canonical_alignment import all_cdrs_mask, cdr3_mask, reg_def
 
 
-@numba.njit(error_model="numpy", fastmath=True, cache=True)
+@numba.njit("UniTuple(float32, 3)(int8[:],int8[:])",error_model="numpy", fastmath=True, cache=True)
 def calculate_seq_id(ab1, ab2):
+    """ Takes two canonically aligned sequences and computes sequence identity
+    Only used for non-parallel.
+    """
     comparison = ab1 == ab2
     mask1, mask2 = ab1 != 0, ab2 != 0
     overlapping_residues = comparison * mask1 * mask2
@@ -26,39 +29,76 @@ def calculate_seq_id(ab1, ab2):
     return full_id, cdrs_id, h3_id
 
 
-@numba.njit(parallel=False, fastmath=True, cache=True)
-def calculate_batch_seq_ids(ab1, array_of_abs):
+@numba.njit("float32[:,:](int8[:],int8[:,:])",error_model="numpy", fastmath=True, cache=True)
+def calculate_all_seq_ids(ab1, array_of_abs):
+    """ Computes sequence identity of one antibody sequence against an array of sequences
+    Only used for non-parallel.
+    """
     
     size = array_of_abs.shape[0]
 
-    identities = np.zeros((size, 3))   
+    identities = np.empty((size, 3), dtype=np.float32)   
     
-    for i in numba.prange(size):
+    for i in range(size):
         identities[i] = calculate_seq_id(ab1, array_of_abs[i])
 
     return identities
 
-def calculate_all_seq_ids(ab1, array_of_abs, n_jobs=1):
-    
-    # Vectorization is quite fast, so only split on larger datasets
-    n_splits = n_jobs if len(array_of_abs) > 10_000 else 1 
-    
-    split_array_of_abs = np.array_split(array_of_abs, n_splits)
 
-    with Pool(processes=n_jobs) as pool:
-        return np.concatenate(pool.starmap(calculate_batch_seq_ids, 
-                                           zip(n_splits * [ab1], split_array_of_abs)
-                                          )
-                             )
+@numba.njit("float32[:,:](int8[:],int8[:,:],float32[:,:])",error_model="numpy", fastmath=True, cache=True)
+def _calculate_batch_seq_ids(ab1, ab2, identities):
+    """ Computes sequence identity of one antibody sequence against an array of sequences
+    Not meant to be used outside of calculate_all_seq_ids_parallel
+    """
+    comparison = ab1 == ab2
+    mask1, mask2 = ab1 != 0, ab2 != 0
+    overlapping_residues = comparison * mask1 * mask2
+
+    # For the whole sequence:
+    full_overlap = np.sum(overlapping_residues, axis=-1)
+    identities[:,0] = (full_overlap / mask1.sum() + full_overlap / mask2.sum(axis=-1)) / 2
+        
+    # For all CDRs
+    cdrs_overlap = np.sum(all_cdrs_mask * overlapping_residues, axis=-1)
+    identities[:,1] = (cdrs_overlap / (mask1 * all_cdrs_mask).sum() + cdrs_overlap / (mask2 * all_cdrs_mask).sum(axis=-1)) / 2
+    
+    # For CDR-H3
+    h3_len1, h3_len2 = (mask1 * cdr3_mask).sum(), (mask2 * cdr3_mask).sum(axis=-1)
+    h3_overlap = np.sum(cdr3_mask * overlapping_residues, axis=-1)
+    identities[:,2] = ((h3_overlap / h3_len1 + h3_overlap / h3_len2) / 2) * (h3_len1==h3_len2)
+   
+    return identities
+
+
+@numba.njit("float32[:,:](int8[:],int8[:,:])",error_model="numpy", fastmath=True, parallel=True)
+def calculate_all_seq_ids_parallel(ab1, array_of_abs):
+    """ Computes sequence identity of one antibody sequence against an array of sequences
+    Only used for parallel.
+    """
+    size = array_of_abs.shape[0]
+    chunk_size = 200  # Somewhat arbitrary number (too big is slow and too small is slow)
+    chunks = size//chunk_size
+    
+    identities = np.empty((size, 3), dtype = np.float32)
+    global_buffer = np.empty((numba.get_num_threads(), chunk_size, 3), dtype = np.float32)
+    
+    for i in numba.prange(chunks):
+        thread_id = numba.np.ufunc.parallel._get_thread_id()
+        start, end = i*chunk_size, (i+1)*chunk_size
+        thread_buffer = global_buffer[thread_id, :size-end]
+        identities[start:end] = _calculate_batch_seq_ids(ab1, array_of_abs[start:end], thread_buffer)
+
+    return identities
 
 
 def get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
-
-    #print(numba.get_num_threads())
-    n_jobs = n_jobs if n_jobs is not None else 1
-    #numba.set_num_threads(n_jobs)
-    
-    seq_identity_matrix = calculate_all_seq_ids(query, target, n_jobs=n_jobs)
+    if n_jobs != 1:
+        if n_jobs is not None:
+            numba.set_num_threads(n_jobs)
+        seq_identity_matrix = calculate_all_seq_ids_parallel(query, target)
+    else:
+        seq_identity_matrix = calculate_all_seq_ids(query, target)
+        
     where_are_NaNs = np.isnan(seq_identity_matrix)
     seq_identity_matrix[where_are_NaNs] = 0
 

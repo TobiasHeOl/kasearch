@@ -8,7 +8,7 @@ class SetQueries:
     """
     Prepares queries for KA-Search. 
     """
-    def __init__(self, queries, allowed_species=None, n_jobs=1):
+    def __init__(self, queries, allowed_species=['Human', 'Mouse'], n_jobs=1):
         
         self.n_jobs = n_jobs
         
