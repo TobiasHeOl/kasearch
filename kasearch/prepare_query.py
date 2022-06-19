@@ -1,44 +1,45 @@
 from dataclasses import dataclass
 from multiprocessing import Pool
 
-from kasearch.species_anarci import number
-from kasearch.canonical_alignment import canonical_alignment
+import numpy as np
 
-class SetQueries:
+from kasearch.species_anarci import number
+from kasearch.canonical_alignment import canonical_alignment, canonical_numbering_len
+
+class AlignSequences:
     """
     Prepares queries for KA-Search. 
     """
-    def __init__(self, queries, allowed_species=['Human', 'Mouse'], n_jobs=1):
+    def __init__(self, seqs, allowed_species=['Human', 'Mouse'], n_jobs=1):
         
         self.n_jobs = n_jobs
+        self._abnormal_sequence = np.zeros(canonical_numbering_len, np.int8)
         
         if allowed_species:
             self.allowed_species = [i.lower() for i in allowed_species]
         else:
             self.allowed_species = None
         
-        self.queries = self.__set_queries(queries)
+        self.db = self._align_sequences(seqs)
         
+    def _canonical_alignment(self, seq):
         
-    def _set_query(self, query):
-        
-        sequence = query
-        
-        numbered_query, chain = number(sequence, allowed_species=self.allowed_species)
-        aligned_query = canonical_alignment(numbered_query)
-        
-        return Query(aligned_query, chain)
+        try:
+            numbered_sequence, _ = number(seq, allowed_species=self.allowed_species)
+            return canonical_alignment(numbered_sequence)
+        except Exception:
+            return self._abnormal_sequence
     
-    def __set_queries(self, queries):
+    def _many_canonical_alignment(self, seqs):
         
-        n_jobs = len(queries) if len(queries) <  self.n_jobs else self.n_jobs
+        n_jobs = len(seqs) if len(seqs) <  self.n_jobs else self.n_jobs
+        chunksize=len(seqs) // n_jobs
 
         with Pool(processes=n_jobs) as pool:
-            return pool.map(self._set_query, queries, chunksize=len(queries) // n_jobs)
+            return Sequences(np.array(pool.map(self._canonical_alignment, seqs, chunksize=chunksize)))
         
         
 @dataclass   
-class Query:
+class Sequences:
     
-    aligned_query: None
-    chain: str
+    aligned_seqs: None

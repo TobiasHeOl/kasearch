@@ -91,21 +91,25 @@ def calculate_all_seq_ids_parallel(ab1, array_of_abs):
     return identities
 
 
-def get_n_most_identical(query, target, target_ids, n=10, n_jobs=None):
+def get_n_most_identical(query, targets, target_ids, n=10, n_jobs=None):
+    
+    n = len(targets)-1 if len(targets) < n else n # Adjusts for large n's
+    
     if n_jobs != 1:
         if n_jobs is not None:
             numba.set_num_threads(n_jobs)
-        seq_identity_matrix = calculate_all_seq_ids_parallel(query, target)
+        seq_identity_matrix = calculate_all_seq_ids_parallel(query, targets)
     else:
-        seq_identity_matrix = calculate_all_seq_ids(query, target)
-        
+        seq_identity_matrix = calculate_all_seq_ids(query, targets)
+
     where_are_NaNs = np.isnan(seq_identity_matrix)
+
     seq_identity_matrix[where_are_NaNs] = 0
 
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id
     n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=0)[:n]
 
-    broadcasted_ids = np.broadcast_to(target_ids[:, None], (target.shape[0], 3, 2))
+    broadcasted_ids = np.broadcast_to(target_ids[:, None], (targets.shape[0], 3, 2))
     n_highest_ids = np.take_along_axis(broadcasted_ids, position_of_n_best[:, :, None], axis=0)[:n]
 
     return n_highest_identities, n_highest_ids

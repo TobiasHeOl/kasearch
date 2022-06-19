@@ -7,10 +7,10 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 from kasearch.identity_calculations import get_n_most_identical, slow_get_n_most_identical
 
-class SearchOAS:
+class SearchDB:
     def __init__(self, 
                  database_path, 
-                 allowed_chain='Heavy', 
+                 allowed_chain='Any', 
                  allowed_species='Any', 
                  n_jobs=None):
         
@@ -30,25 +30,24 @@ class SearchOAS:
     def __set_allowed_files(self, allowed_chain, allowed_species):
         
         self.allowed_files = []
-        self.allowed_weird_files = []
+        self.allowed_abnormal_files = []
         
         if allowed_species == 'Any': allowed_species = '*'
         allowed_species = [allowed_species] if isinstance(allowed_species, str) else allowed_species
         if allowed_chain == 'Any': allowed_chain = '*'
-        
+
         for species in allowed_species:
-            
             self.allowed_files += glob.glob(os.path.join(self.database_path, 
                                                          allowed_chain, 
                                                          species, 
                                                          "*[0-9].npz"))
-            self.allowed_weird_files += glob.glob(os.path.join(self.database_path, 
+            self.allowed_abnormal_files += glob.glob(os.path.join(self.database_path, 
                                                                allowed_chain, 
                                                                species, 
-                                                               "*weird.npz"))
+                                                               "*abnormal.npz"))
 
     def __update_best(self, query, keep_best_n):
-        chunk_best_identities, chunk_best_ids = get_n_most_identical(query.aligned_query,
+        chunk_best_identities, chunk_best_ids = get_n_most_identical(query,
                                                                      self._current_target_numbering,
                                                                      self._current_target_ids, 
                                                                      n=keep_best_n,
