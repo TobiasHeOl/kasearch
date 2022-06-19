@@ -20,7 +20,7 @@ class AlignSequences:
         else:
             self.allowed_species = None
         
-        self.db = self._align_sequences(seqs)
+        self.db = self._many_canonical_alignment(seqs)
         
     def _canonical_alignment(self, seq):
         
