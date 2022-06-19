@@ -18,13 +18,20 @@ def calculate_seq_id(ab1, ab2):
     full_id = (full_overlap / mask1.sum() + full_overlap / mask2.sum()) / 2
     
     # For all CDRs
-    cdrs_overlap = np.sum(all_cdrs_mask * overlapping_residues)
-    cdrs_id = (cdrs_overlap / (mask1 * all_cdrs_mask).sum() + cdrs_overlap / (mask2 * all_cdrs_mask).sum()) / 2
+    cdrs_len1, cdrs_len2 = (mask1 * all_cdrs_mask).sum(), (mask2 * all_cdrs_mask).sum()
+    if cdrs_len1 == cdrs_len2:
+        cdrs_overlap = np.sum(all_cdrs_mask * overlapping_residues)
+        cdrs_id = cdrs_overlap / cdrs_len1
+    else:
+        cdrs_id = 0.0
     
     # For CDR-H3
     h3_len1, h3_len2 = (mask1 * cdr3_mask).sum(), (mask2 * cdr3_mask).sum()
-    h3_overlap = np.sum(cdr3_mask * overlapping_residues)
-    h3_id = (h3_overlap / h3_len1 + h3_overlap / h3_len2) / 2
+    if h3_len1==h3_len2:
+        h3_overlap = np.sum(cdr3_mask * overlapping_residues)
+        h3_id = h3_overlap / h3_len1
+    else:
+        h3_id = 0.0
    
     return full_id, cdrs_id, h3_id
 
@@ -59,13 +66,14 @@ def _calculate_batch_seq_ids(ab1, ab2, identities):
     identities[:,0] = (full_overlap / mask1.sum() + full_overlap / mask2.sum(axis=-1)) / 2
         
     # For all CDRs
+    cdrs_len1, cdrs_len2 = (mask1 * all_cdrs_mask).sum(), (mask2 * all_cdrs_mask).sum(axis=-1)
     cdrs_overlap = np.sum(all_cdrs_mask * overlapping_residues, axis=-1)
-    identities[:,1] = (cdrs_overlap / (mask1 * all_cdrs_mask).sum() + cdrs_overlap / (mask2 * all_cdrs_mask).sum(axis=-1)) / 2
+    identities[:,1] = (cdrs_overlap / cdrs_len1) * (cdrs_len1==cdrs_len2)
     
     # For CDR-H3
     h3_len1, h3_len2 = (mask1 * cdr3_mask).sum(), (mask2 * cdr3_mask).sum(axis=-1)
     h3_overlap = np.sum(cdr3_mask * overlapping_residues, axis=-1)
-    identities[:,2] = ((h3_overlap / h3_len1 + h3_overlap / h3_len2) / 2) * (h3_len1==h3_len2)
+    identities[:,2] = (h3_overlap / h3_len1) * (h3_len1==h3_len2)
    
     return identities
 
@@ -79,8 +87,8 @@ def calculate_all_seq_ids_parallel(ab1, array_of_abs):
     chunk_size = 200  # Somewhat arbitrary number (too big is slow and too small is slow)
     chunks = size//chunk_size
     
-    identities = np.empty((size, 3), dtype = np.float32)
-    global_buffer = np.empty((numba.get_num_threads(), chunk_size, 3), dtype = np.float32)
+    identities = np.zeros((size, 3), dtype = np.float32)
+    global_buffer = np.zeros((numba.get_num_threads(), chunk_size, 3), dtype = np.float32)
     
     for i in numba.prange(chunks):
         thread_id = numba.np.ufunc.parallel._get_thread_id()
