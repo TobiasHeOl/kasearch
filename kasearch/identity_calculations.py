@@ -85,15 +85,15 @@ def calculate_all_seq_ids_parallel(ab1, array_of_abs):
     """
     size = array_of_abs.shape[0]
     chunk_size = 200  # Somewhat arbitrary number (too big is slow and too small is slow)
-    chunks = size//chunk_size
+    chunks = size//chunk_size + 1
     
-    identities = np.zeros((size, 3), dtype = np.float32)
-    global_buffer = np.zeros((numba.get_num_threads(), chunk_size, 3), dtype = np.float32)
+    identities = np.empty((size, 3), dtype = np.float32)
+    global_buffer = np.empty((numba.get_num_threads(), chunk_size, 3), dtype = np.float32)
     
     for i in numba.prange(chunks):
         thread_id = numba.np.ufunc.parallel._get_thread_id()
         start, end = i*chunk_size, (i+1)*chunk_size
-        thread_buffer = global_buffer[thread_id, :size-end]
+        thread_buffer = global_buffer[thread_id, :size-start]
         identities[start:end] = _calculate_batch_seq_ids(ab1, array_of_abs[start:end], thread_buffer)
 
     return identities
