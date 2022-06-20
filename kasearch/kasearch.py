@@ -35,16 +35,16 @@ class SearchDB:
         if allowed_species == 'Any': allowed_species = '*'
         allowed_species = [allowed_species] if isinstance(allowed_species, str) else allowed_species
         if allowed_chain == 'Any': allowed_chain = '*'
-
+        
         for species in allowed_species:
             self.allowed_files += glob.glob(os.path.join(self.database_path, 
                                                          allowed_chain, 
                                                          species, 
-                                                         "*[0-9].npz"))
+                                                         "*data-subset-0-*.npz"))
             self.allowed_abnormal_files += glob.glob(os.path.join(self.database_path, 
                                                                allowed_chain, 
                                                                species, 
-                                                               "*abnormal.npz"))
+                                                               "*data-subset-abnormal-*.npz"))
 
     def __update_best(self, query, keep_best_n):
         chunk_best_identities, chunk_best_ids = get_n_most_identical(query,
@@ -84,7 +84,7 @@ class DataLoader():
         self.__data = _pool.submit(self.__load_data, file)
         
     def __load_data(self, file):
-        data = np.load(file)
+        data = np.load(file, allow_pickle=True)
         output = {}
         output['numberings'] = data['numberings']
         output['idxs'] = data['idxs']
