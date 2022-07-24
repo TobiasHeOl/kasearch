@@ -5,6 +5,7 @@ import pkg_resources
 from joblib import Parallel, delayed
 
 import pandas as pd
+import numpy as np
 
 
 class ExtractMetadata:
@@ -16,23 +17,42 @@ class ExtractMetadata:
         with open(id_to_study_file, "r") as handle:
             self.id_to_study = ast.literal_eval(handle.readlines()[0])
             
-    def _get_single_meta(self, idx):
-
-        study_id, line_id = idx
+    def __group_ids_by_study(self, idxs):
+        idxs_ordered_by_seqid = np.stack([*idxs.T,np.arange(len(idxs))], axis = -1)
+        idxs_ordered_by_study = idxs_ordered_by_seqid[idxs_ordered_by_seqid[:, 0].argsort()]
+        unique_studies, split = np.unique(idxs_ordered_by_study[:, 0], return_index=True)
+        return np.split(idxs_ordered_by_study, split[1:])
+    
+    def _get_single_study_meta(self, idxs):
+        
+        study_id = idxs[0,0]
         study_file = self.id_to_study[study_id]
+        line_ids = idxs[:,1]
+
         sequence_meta = pd.Series(json.loads(','.join(pd.read_csv(study_file, nrows=0).columns)))
         sequence_data = pd.read_csv(study_file, 
-                                    header=1, 
-                                    skiprows=list(range(2,line_id+2)), 
-                                    nrows=1).iloc[0]
-
-        return pd.concat([sequence_data, sequence_meta])
-    
+                            header=1, 
+                            skiprows=[x+2 for x in range(line_ids.max()) if x not in line_ids], 
+                            nrows=len(line_ids))
+        
+        for key in sequence_meta.keys():
+            sequence_data[key] = sequence_meta[key]
+        sequence_data["rank"] = idxs[np.argsort(line_ids)][:,-1]
+        
+        return sequence_data
+        
     def get_meta(self, idxs, n_jobs=1):
         
         idxs = [idxs] if any(isinstance(i, int) for i in idxs) else idxs
-        n_jobs = len(idxs) if len(idxs) <  n_jobs else n_jobs
-        chunksize=len(idxs) // n_jobs
+        groups = self.__group_ids_by_study(idxs)
+        groups.sort(key=len, reverse=True)
+        
+        n_groups = len(groups)
+        n_jobs = n_groups if n_groups <  n_jobs else n_jobs
+        chunksize= n_groups // n_jobs
 
-        return pd.concat(Parallel(n_jobs=n_jobs)(delayed(self._get_single_meta)(idx) for idx in idxs), axis=1).T
+        fetched_metadata = pd.concat(Parallel(n_jobs=n_jobs)(delayed(self._get_single_study_meta)(group) for group in groups))
+        
+        return fetched_metadata.sort_values("rank").reset_index(drop=True).drop(columns = ["rank"])
+ 
  
