@@ -71,7 +71,7 @@ class PrepareDB:
             self.tmpDB.abnormal_sequences_idxs[chain][species].append(
                 sequence_idxs[abnormal_sequence_idxs])
     
-    def _save_data_subset(self, sequence_alignments, sequence_idxs, chain, species, suffix = None):
+    def _save_data_subset(self, sequence_alignments, sequence_idxs, chain, species, suffix = ''):
         
         if suffix == None:
             suffix = self._file_suffix
@@ -112,14 +112,15 @@ class PrepareDB:
                 if self.tmpDB.sequences[chain][species] != []:
                     self._save_data_subset(self.tmpDB.sequences, 
                                            self.tmpDB.sequences_idxs, 
-                                           chain, species
+                                           chain, species,
+                                           suffix = 'normal'
                                           )
                     
                 if self.tmpDB.abnormal_sequences[chain][species] != []:
                     self._save_data_subset(self.tmpDB.abnormal_sequences, 
                                            self.tmpDB.abnormal_sequences_idxs, 
                                            chain, species,
-                                           suffix = 'abnormal'
+                                           suffix = 'unusual'
                                           )
     
     
