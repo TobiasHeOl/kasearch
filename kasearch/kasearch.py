@@ -7,7 +7,7 @@ import requests
 import numpy as np
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from kasearch.identity_calculations import get_n_most_identical, slow_get_n_most_identical
+from kasearch.identity_calculations import get_n_most_identical_multiquery, get_n_most_identical, slow_get_n_most_identical
 from kasearch.meta_extract import ExtractMetadata
 
 class SearchDB(ExtractMetadata):
@@ -43,12 +43,12 @@ class SearchDB(ExtractMetadata):
         self.__set_allowed_files(allowed_chain, allowed_species)
         self.__reset_current_best()
     
-    def __reset_current_best(self):
+    def __reset_current_best(self, qsize=1):
         
         self._current_target_numbering = None
         self._current_target_ids = None
-        self.current_best_identities = np.zeros((1, 3), np.float16) - 1
-        self.current_best_ids = np.zeros((1, 3, 2), np.int32) - 1
+        self.current_best_identities = np.zeros((qsize, 1, 3), np.float16) - 1
+        self.current_best_ids = np.zeros((qsize, 1, 3, 2), np.int32) - 1
 
     def __set_allowed_files(self, allowed_chain, allowed_species):
         
@@ -70,23 +70,25 @@ class SearchDB(ExtractMetadata):
                                                                "*data-subset-unusual-*.npz"))
 
     def __update_best(self, query, keep_best_n):
-        chunk_best_identities, chunk_best_ids = get_n_most_identical(query,
+        
+        chunk_best_identities, chunk_best_ids = get_n_most_identical_multiquery(query,
                                                                      self._current_target_numbering,
                                                                      self._current_target_ids, 
                                                                      n=keep_best_n,
                                                                      n_jobs=self.n_jobs)
 
-        all_identities = np.concatenate([chunk_best_identities, self.current_best_identities])
-        all_ids = np.concatenate([chunk_best_ids, self.current_best_ids])
+        all_identities = np.concatenate([chunk_best_identities, self.current_best_identities], axis=1)
+        all_ids = np.concatenate([chunk_best_ids, self.current_best_ids], axis=1)
 
-        order = np.argsort(-all_identities, axis=0)
-        self.current_best_identities = np.take_along_axis(all_identities, order, axis=0)[:keep_best_n]
-        self.current_best_ids = np.take_along_axis(all_ids, order[:, :, None], axis=0)[:keep_best_n]
+        order = np.argsort(-all_identities, axis=1)
+
+        self.current_best_identities = np.take_along_axis(all_identities, order, axis=1)[:, :keep_best_n]
+        self.current_best_ids = np.take_along_axis(all_ids, order[:, :, :, None], axis=1)[:, :keep_best_n]
         
     def search(self, query, keep_best_n=10, reset_best=True):
         
         if reset_best == True:
-            self.__reset_current_best()
+            self.__reset_current_best(query.shape[0])
 
         data_loader = DataLoader(self.allowed_normal_files[0])
         self._current_target_numbering = data_loader.data['numberings']
@@ -109,8 +111,8 @@ class SearchDB(ExtractMetadata):
         assert n_region >= 0
         assert n_sequences > 0
         
-        metadf = self._extract_meta(self.current_best_ids[:n_sequences, n_region], n_jobs=n_jobs)
-        metadf['Identity'] = self.current_best_identities[:n_sequences, n_region]
+        metadf = self._extract_meta(self.current_best_ids[n_query, :n_sequences, n_region], n_jobs=n_jobs)
+        metadf['Identity'] = self.current_best_identities[n_query, :n_sequences, n_region]
         return metadf
         
         
