@@ -10,7 +10,9 @@ import numpy as np
 
 class ExtractMetadata:
     def __init__(self, id_to_study_file=None):
-        
+        pass
+    
+    def _set_id_to_study(self, id_to_study_file):
         if id_to_study_file == None:
             id_to_study_file = pkg_resources.resource_filename(__name__, "id_to_study.txt")
         
@@ -41,7 +43,7 @@ class ExtractMetadata:
         
         return sequence_data
         
-    def get_meta(self, idxs, n_jobs=1):
+    def _extract_meta(self, idxs, n_jobs=1):
         
         idxs = [idxs] if any(isinstance(i, int) for i in idxs) else idxs
         groups = self.__group_ids_by_study(idxs)

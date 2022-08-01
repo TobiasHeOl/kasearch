@@ -113,7 +113,6 @@ def get_n_most_identical(query, targets, target_ids, n=10, n_jobs=None):
     where_are_NaNs = np.isnan(seq_identity_matrix)
 
     seq_identity_matrix[where_are_NaNs] = 0
-
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id
     n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=0)[:n]
 

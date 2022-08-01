@@ -85,13 +85,16 @@ class PrepareDB:
                             numberings=np.concatenate(sequence_alignments[chain][species]), 
                             idxs=np.concatenate(sequence_idxs[chain][species]))
         
-    def prepare_database(self, sequence_dataset, file_id, chain='Heavy', species='Human'):
+    def prepare_database(self, sequence_dataset, file_id, sequence_lines = None, chain='Heavy', species='Human'):
         """
         Prepares the new database. If a subset contains more than 50 million sequences, save that subset.
         """
         
+        if not sequence_lines:
+            sequence_lines = range(len(sequence_dataset))
+        
         sequence_alignments = self._many_canonical_alignment(sequence_dataset)
-        sequence_idxs = np.array([[file_id, i] for i in range(len(sequence_dataset))], np.int32)
+        sequence_idxs = np.array([[file_id, i] for i in sequence_lines], np.int32)
         
         self._update_tmpDB(sequence_dataset, sequence_alignments, sequence_idxs, chain, species)
         
@@ -99,7 +102,9 @@ class PrepareDB:
             
             self._save_data_subset(self.tmpDB.sequences, 
                                    self.tmpDB.sequences_idxs, 
-                                   chain, species)
+                                   chain, species,
+                                   suffix = 'normal'
+                                  )
             
             self.tmpDB.sequences_count[chain][species] = 0
             self.tmpDB.sequences[chain][species] = []
