@@ -1,189 +1,42 @@
-import numpy as np
-import numba
+
+import jax
+import jax.numpy as jnp
+
+import numpy as np 
 from multiprocessing import Pool
 from kasearch.canonical_alignment import all_cdrs_mask, cdr3_mask, reg_def
 
+default_region_masks = np.stack([np.ones(200, dtype = np.int8), all_cdrs_mask, cdr3_mask])
+default_length_matched = np.array([False,True,True], dtype = bool)
 
-@numba.njit("UniTuple(float32, 3)(int8[:],int8[:])",error_model="numpy", fastmath=True, cache=True)
-def calculate_seq_id(ab1, ab2):
-    """ Takes two canonically aligned sequences and computes sequence identity
-    Only used for non-parallel.
-    """
-    comparison = ab1 == ab2
-    mask1, mask2 = ab1 != 0, ab2 != 0
+@jax.jit
+def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched):
+    masks, length_matched = jnp.array(region_masks.T), jnp.array(length_matched)
+    
+    abs1 = jax.lax.stop_gradient(jnp.expand_dims(array_of_abs1, axis=1))
+    abs2 = jax.lax.stop_gradient(jnp.expand_dims(array_of_abs2, axis=0))
+    comparison = abs1 == abs2
+
+    mask1, mask2 = abs1 != 0, abs2 != 0
     overlapping_residues = comparison * mask1 * mask2
 
-    # For the whole sequence:
-    full_overlap = np.sum(overlapping_residues)
-    full_id = (full_overlap / mask1.sum() + full_overlap / mask2.sum()) / 2
+    len1, len2 = mask1 @ masks, mask2 @ masks
+    region_overlap = overlapping_residues @ masks
+    identities = ((region_overlap / len1) + (region_overlap / len2)) * (~length_matched | (len1==len2)) / 2
     
-    # For all CDRs
-    cdrs_len1, cdrs_len2 = (mask1 * all_cdrs_mask).sum(), (mask2 * all_cdrs_mask).sum()
-    if cdrs_len1 == cdrs_len2:
-        cdrs_overlap = np.sum(all_cdrs_mask * overlapping_residues)
-        cdrs_id = cdrs_overlap / cdrs_len1
-    else:
-        cdrs_id = 0.0
-    
-    # For CDR-H3
-    h3_len1, h3_len2 = (mask1 * cdr3_mask).sum(), (mask2 * cdr3_mask).sum()
-    if h3_len1==h3_len2:
-        h3_overlap = np.sum(cdr3_mask * overlapping_residues)
-        h3_id = h3_overlap / h3_len1
-    else:
-        h3_id = 0.0
-   
-    return full_id, cdrs_id, h3_id
-
-
-@numba.njit("float32[:,:](int8[:],int8[:,:])",error_model="numpy", fastmath=True, cache=True)
-def calculate_all_seq_ids(ab1, array_of_abs):
-    """ Computes sequence identity of one antibody sequence against an array of sequences
-    Only used for non-parallel.
-    """
-    
-    size = array_of_abs.shape[0]
-
-    identities = np.empty((size, 3), dtype=np.float32)   
-    
-    for i in range(size):
-        identities[i] = calculate_seq_id(ab1, array_of_abs[i])
-
     return identities
 
 
-@numba.njit("float32[:,:](int8[:],int8[:,:],float32[:,:])",error_model="numpy", fastmath=True, cache=True)
-def _calculate_batch_seq_ids(ab1, ab2, identities):
-    """ Computes sequence identity of one antibody sequence against an array of sequences
-    Not meant to be used outside of calculate_all_seq_ids_parallel
-    """
-    comparison = ab1 == ab2
-    mask1, mask2 = ab1 != 0, ab2 != 0
-    overlapping_residues = comparison * mask1 * mask2
 
-    # For the whole sequence:
-    full_overlap = np.sum(overlapping_residues, axis=-1)
-    identities[:,0] = (full_overlap / mask1.sum() + full_overlap / mask2.sum(axis=-1)) / 2
-        
-    # For all CDRs
-    cdrs_len1, cdrs_len2 = (mask1 * all_cdrs_mask).sum(), (mask2 * all_cdrs_mask).sum(axis=-1)
-    cdrs_overlap = np.sum(all_cdrs_mask * overlapping_residues, axis=-1)
-    identities[:,1] = (cdrs_overlap / cdrs_len1) * (cdrs_len1==cdrs_len2)
-    
-    # For CDR-H3
-    h3_len1, h3_len2 = (mask1 * cdr3_mask).sum(), (mask2 * cdr3_mask).sum(axis=-1)
-    h3_overlap = np.sum(cdr3_mask * overlapping_residues, axis=-1)
-    identities[:,2] = (h3_overlap / h3_len1) * (h3_len1==h3_len2)
-   
-    return identities
-
-
-@numba.njit("float32[:,:](int8[:],int8[:,:])",error_model="numpy", fastmath=True, parallel=True)
-def calculate_all_seq_ids_parallel(ab1, array_of_abs):
-    """ Computes sequence identity of one antibody sequence against an array of sequences
-    Only used for parallel.
-    """
-    size = array_of_abs.shape[0]
-    chunk_size = 200  # Somewhat arbitrary number (too big is slow and too small is slow)
-    chunks = size//chunk_size + 1
-    
-    identities = np.empty((size, 3), dtype = np.float32)
-    global_buffer = np.empty((numba.get_num_threads(), chunk_size, 3), dtype = np.float32)
-    
-    for i in numba.prange(chunks):
-        thread_id = numba.np.ufunc.parallel._get_thread_id()
-        start, end = i*chunk_size, (i+1)*chunk_size
-        thread_buffer = global_buffer[thread_id, :size-start]
-        identities[start:end] = _calculate_batch_seq_ids(ab1, array_of_abs[start:end], thread_buffer)
-
-    return identities
-
-
-def get_n_most_identical(query, targets, target_ids, n=10, n_jobs=None):
+def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
+                                    region_masks=default_region_masks, 
+                                    length_matched=default_length_matched):
     
     n = len(targets)-1 if len(targets) < n else n # Adjusts for large n's
     
-    if n_jobs != 1:
-        if n_jobs is not None:
-            numba.set_num_threads(n_jobs)
-        seq_identity_matrix = calculate_all_seq_ids_parallel(query, targets)
-    else:
-        seq_identity_matrix = calculate_all_seq_ids(query, targets)
-
-    where_are_NaNs = np.isnan(seq_identity_matrix)
-
-    seq_identity_matrix[where_are_NaNs] = 0
-    position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id
-    n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=0)[:n]
-
-    broadcasted_ids = np.broadcast_to(target_ids[:, None], (targets.shape[0], 3, 2))
-    n_highest_ids = np.take_along_axis(broadcasted_ids, position_of_n_best[:, :, None], axis=0)[:n]
-
-    return n_highest_identities, n_highest_ids
-
-
-@numba.njit("float32[:,:,:](int8[:,:],int8[:,:],float32[:,:,:])",error_model="numpy", fastmath=True, cache = True)
-def _calculate_batch_seq_ids_multiquery(ab1, ab2, identities):
-    """ Computes sequence identity of one antibody sequence against an array of sequences
-    Not meant to be used outside of calculate_all_seq_ids_parallel_multiquery
-    """
-    ab1 = np.expand_dims(ab1, axis=1)
-    ab2 = np.expand_dims(ab2, axis=0)
-    comparison = (ab1 == ab2)
-    mask1, mask2 = ab1 != 0, ab2 != 0
-    overlapping_residues = comparison * mask1 * mask2
-
-    # For the whole sequence:
-    full_overlap = np.sum(overlapping_residues, axis=-1)
-    xs =(full_overlap / mask1.sum(axis=-1) + full_overlap / mask2.sum(axis=-1)) / 2
-    identities[:,:,0] = xs 
-        
-    # For all CDRs
-    cdrs_len1, cdrs_len2 = (mask1 * all_cdrs_mask).sum(axis=-1), (mask2 * all_cdrs_mask).sum(axis=-1)
-    cdrs_overlap = np.sum(all_cdrs_mask * overlapping_residues, axis=-1)
-    identities[:,:,1] = (cdrs_overlap / cdrs_len1) * (cdrs_len1==cdrs_len2)
-
-    # For CDR-H3
-    h3_len1, h3_len2 = (mask1 * cdr3_mask).sum(axis=-1), (mask2 * cdr3_mask).sum(axis=-1)
-    h3_overlap = np.sum(cdr3_mask * overlapping_residues, axis=-1)
-    identities[:,:,2] = (h3_overlap / h3_len1) * (h3_len1==h3_len2)
-   
-    return identities
-
-
-@numba.njit("float32[:,:,:](int8[:,:],int8[:,:])",error_model="numpy", fastmath=True, parallel=True)
-def calculate_all_seq_ids_parallel_multiquery(ab1, array_of_abs):
-    """ Computes sequence identity of one antibody sequence against an array of sequences
-    Only used for parallel.
-    """
-    qsize, size = ab1.shape[0], array_of_abs.shape[0]
-    chunk_size = 200//qsize + 4  # Somewhat arbitrary number (too big is slow and too small is slow)
-    chunks = size//chunk_size + 1
-    
-    identities = np.empty((qsize, size, 3), dtype = np.float32)
-    global_buffer = np.empty((numba.get_num_threads(), qsize, chunk_size, 3), dtype = np.float32)
-    
-    for i in numba.prange(chunks):
-        thread_id = numba.np.ufunc.parallel._get_thread_id()
-        start, end = i*chunk_size, (i+1)*chunk_size
-        thread_buffer = global_buffer[thread_id,:,:size-start]
-        identities[:,start:end] = _calculate_batch_seq_ids_multiquery(ab1, array_of_abs[start:end], thread_buffer)
-
-    return identities
-
-
-def get_n_most_identical_multiquery(query, targets, target_ids, n=10, n_jobs=None):
-    
-    n = len(targets)-1 if len(targets) < n else n # Adjusts for large n's
-
-    if n_jobs is not None:
-        numba.set_num_threads(n_jobs)
-    
-    seq_identity_matrix = calculate_all_seq_ids_parallel_multiquery(query, targets)
-
-    where_are_NaNs = np.isnan(seq_identity_matrix)
-
-    seq_identity_matrix[where_are_NaNs] = 0
+    seq_identity_matrix = calculate_seq_ids_multiquery(query, targets, region_masks, length_matched)
+    seq_identity_matrix = np.array(seq_identity_matrix)
+    seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
 
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=1)  # partition by seq_id
     n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=1)[:,:n]
