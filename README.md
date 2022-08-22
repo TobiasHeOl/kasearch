@@ -36,7 +36,7 @@ Additionally, you need a version of [ANARCI](https://github.com/oxpig/ANARCI) in
 
 # KA-Search guide
 
-**A Jupyter notebook** showcasing KA-Search can be found [here](https://github.com/oxpig/kasearch/tree/main/examples). 
+**A Jupyter notebook** showcasing KA-Search can be found [here](https://github.com/oxpig/kasearch/blob/main/notebooks/examples.ipynb). 
 
 
 -----
