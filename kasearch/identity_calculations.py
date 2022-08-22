@@ -1,4 +1,3 @@
-
 import jax
 import jax.numpy as jnp
 
@@ -11,6 +10,7 @@ default_length_matched = np.array([False,True,True], dtype = bool)
 
 @jax.jit
 def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched):
+
     masks, length_matched = jnp.array(region_masks.T), jnp.array(length_matched)
     
     abs1 = jax.lax.stop_gradient(jnp.expand_dims(array_of_abs1, axis=1))
@@ -37,11 +37,11 @@ def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
     seq_identity_matrix = calculate_seq_ids_multiquery(query, targets, region_masks, length_matched)
     seq_identity_matrix = np.array(seq_identity_matrix)
     seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
-
+    
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=1)  # partition by seq_id
     n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=1)[:,:n]
 
-    broadcasted_ids = np.broadcast_to(target_ids[:, None], (query.shape[0], targets.shape[0], 3, 2))
+    broadcasted_ids = np.broadcast_to(target_ids[:, None], (query.shape[0], targets.shape[0], region_masks.shape[0], 2))
     n_highest_ids = np.take_along_axis(broadcasted_ids, position_of_n_best[:, :, :, None], axis=1)[:,:n]
 
     return n_highest_identities, n_highest_ids

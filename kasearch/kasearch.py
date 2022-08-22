@@ -1,31 +1,36 @@
 import os
-import glob
 import time
-import subprocess
-import requests
 
 import numpy as np
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from kasearch.identity_calculations import get_n_most_identical_multiquery, get_n_most_identical, slow_get_n_most_identical
+from kasearch.identity_calculations import get_n_most_identical_multiquery, slow_get_n_most_identical
 from kasearch.meta_extract import ExtractMetadata
+from kasearch.initiate_db import InitiateDatabase
+from kasearch.canonical_alignment import get_region_mask
 
-class SearchDB(ExtractMetadata):
+class SearchDB(InitiateDatabase, ExtractMetadata):
     def __init__(self, 
                  database_path='oasdb-small', 
                  allowed_chain='Any', 
-                 allowed_species='Any', 
-                 n_jobs=None,
+                 allowed_species='Any',
+                 regions=['whole', 'cdrs', 'cdr3'],
+                 length_matched=[False,True,True],
                  id_to_study_file=None,
                 ):
         super().__init__()
         
-        self.n_jobs = n_jobs
+        self.region_masks = np.stack([get_region_mask(region) for region in regions])
+        self.length_matched = np.array(length_matched, dtype = bool)
+        assert self.region_masks.shape[0] == self.length_matched.shape[0], "List of user-defined regions ({}) and 'if length match' ({})\
+ are of different lengths. Please define a 'if length match' for each defined region.".format(self.region_masks.shape[0], self.length_matched.shape[0])
         
-        self.__set_database_path(database_path)
+        self._set_database_path(database_path)
+        self._set_files_to_search(allowed_chain, allowed_species)
+        
         self._set_id_to_study(os.path.join(self.database_path, "id_to_study.txt"))
-        self.__set_files_to_search(allowed_chain, allowed_species)
-        self.__reset_current_best()
+        
+        assert len(self.files_to_search_normal) != 0, "DB does not contain data of {} chains from the {} species.".format(allowed_chain, allowed_species)
     
     def __reset_current_best(self, qsize=1):
         """
@@ -34,54 +39,8 @@ class SearchDB(ExtractMetadata):
         
         self._current_target_numbering = None
         self._current_target_ids = None
-        self.current_best_identities = np.zeros((qsize, 1, 3), np.float16) - 1
-        self.current_best_ids = np.zeros((qsize, 1, 3, 2), np.int32) - 1
-
-    def __set_database_path(self, database_path = 'oasdb-small'):
-        """
-        Sets database path. If none given, downloads a small version of OAS (4.4GB).
-        """
-        
-        if database_path == 'oasdb-small': # Download a small version of OAS
-            db_folder = os.path.join(os.path.dirname(__file__), "oasdb")
-            os.makedirs(db_folder, exist_ok = True)
-            
-            if not glob.glob(os.path.join(db_folder, "oasdb_small*")):
-                print("Downloading a small version of OAS (4.4GB) ...")
-                
-                url = "https://zenodo.org/record/6668747/files/oasdb_small.tar"
-                tmp_file = os.path.join(db_folder, "tmp.tar")
-
-                with open(tmp_file,'wb') as f: f.write(requests.get(url).content)
-                
-                subprocess.run(["tar", "-xf", tmp_file, "-C", db_folder], check = True) 
-                os.remove(tmp_file)
-               
-            database_path = glob.glob(os.path.join(db_folder, "oasdb_small*"))[0]
-        
-        self.database_path = database_path
-        
-    def __set_files_to_search(self, allowed_chain, allowed_species):
-        """
-        Sets files to search.
-        """
-        
-        self.files_to_search_normal = []
-        self.files_to_search_unusual = []
-        
-        if allowed_species == 'Any': allowed_species = '*'
-        allowed_species = [allowed_species] if isinstance(allowed_species, str) else allowed_species
-        if allowed_chain == 'Any': allowed_chain = '*'
-        
-        for species in allowed_species:
-            self.files_to_search_normal += glob.glob(os.path.join(self.database_path, 
-                                                         allowed_chain, 
-                                                         species, 
-                                                         "*data-subset-normal-*.npz"))
-            self.files_to_search_unusual += glob.glob(os.path.join(self.database_path, 
-                                                               allowed_chain, 
-                                                               species, 
-                                                               "*data-subset-unusual-*.npz"))
+        self.current_best_identities = np.zeros((qsize, 1, self.region_masks.shape[0]), np.float16) - 1
+        self.current_best_ids = np.zeros((qsize, 1, self.region_masks.shape[0], 2), np.int32) - 1
 
     def __update_best(self, query, keep_best_n):
         """
@@ -89,11 +48,13 @@ class SearchDB(ExtractMetadata):
         """
         
         chunk_best_identities, chunk_best_ids = get_n_most_identical_multiquery(query,
-                                                                     self._current_target_numbering,
-                                                                     self._current_target_ids, 
-                                                                     n=keep_best_n,
-                                                                     n_jobs=self.n_jobs)
-
+                                                                                self._current_target_numbering,
+                                                                                self._current_target_ids, 
+                                                                                n=keep_best_n,
+                                                                                region_masks=self.region_masks, 
+                                                                                length_matched=self.length_matched
+                                                                               )
+        
         all_identities = np.concatenate([chunk_best_identities, self.current_best_identities], axis=1)
         all_ids = np.concatenate([chunk_best_ids, self.current_best_ids], axis=1)
 
@@ -102,13 +63,12 @@ class SearchDB(ExtractMetadata):
         self.current_best_identities = np.take_along_axis(all_identities, order, axis=1)[:, :keep_best_n]
         self.current_best_ids = np.take_along_axis(all_ids, order[:, :, :, None], axis=1)[:, :keep_best_n]
         
-    def search(self, query, keep_best_n=10, reset_best=True):
+    def search(self, query, keep_best_n=10):
         """
         Search database for sequences most similar to the queries.
         """
         
-        if reset_best == True:
-            self.__reset_current_best(query.shape[0])
+        self.__reset_current_best(query.shape[0])
 
         data_loader = DataLoader(self.files_to_search_normal[0])
         self._current_target_numbering = data_loader.data['numberings']
@@ -128,7 +88,7 @@ class SearchDB(ExtractMetadata):
         """
         
         if n_sequences == 'all':
-            n_sequences = len(self.current_best_ids[1])
+            n_sequences = self.current_best_identities.shape[1]
             
         assert n_query >= 0
         assert n_region >= 0

@@ -3,15 +3,15 @@
 
 <div align="center">    
  
-# KA-Search: Rapid and exact sequence identity search of known antibodies  
+# KA-Search: Rapid and exhaustive sequence identity search of known antibodies
 
 
 </div>
 
 
-In antibody therapeutic drug discovery, finding antibodies with similar sequence, or complementary determining regions (CDR) as an antibody of interest is a convenient method for understanding ones drug. A simple and often used approach for finding similar sequences is using sequence identity, either for the whole sequence or CDRs. However, with the current and ever-growing size of available antibody sequences, searching against all known antibodies is becoming ever the more difficult. The Observed Antibody Space (OAS) database currently contains 1.7 billion antibody sequences. A tool optimized for this specific task is therefore relevant for speeding up this process and making it feasible.
+Antibodies with similar amino acid sequences, especially in the complementary-determining regions (CDRs), often share certain properties. It is often powerful to compare the sequence of an antibody of interest against natural antibody repertoires, as finding similar antibodies in nature can indicate likely specificity or immunogenicity. However, as the number of available antibody repertoire sequences has exceeded a billion and is continuing to grow, repertoire mining for highly similar sequences has become increasingly computationally expensive. Existing approaches are limited by either being low-throughput, non-exhaustive, not antibody-specific, or only searching against entire chain sequences. Therefore, there is a need for a specialized tool, optimized for a rapid and exhaustive search of any antibody region against all known antibodies, to better utilize the full number of available repertoire sequences.
 
-Here, we introduce Known Antibody Search (KA-Search), a tool for rapid search of similar whole chain, CDRs and CDR3 antibodies in the OAS database. We demonstrate how with a prepared target dataset, KA-Search can be used to find the N most similar antibodies from a dataset of 1.7 billion antibodies within ~22 mins on 6 CPUs. Further, for convenience, a user can create their own database to search against, utilizing the same functionality and speed on in-house data. 
+Here, we introduce Known Antibody Search (KA-Search), a tool that allows for rapid search of the 1.7 billion antibodies in the Observed Antibody Space (OAS) database by sequence identity across either the whole chain, the CDRs, or a user defined antibody region. KA-Search can be used to find the most similar sequences from OAS within 20 minutes using 5 CPUs. We demonstrate how KA-Search can be used to obtain new insights about an antibody of interest. KA-Search is freely available at https://github.com/oxpig/kasearch.
 
 -----------
 
@@ -26,14 +26,17 @@ KA-Search is freely available and can be installed with pip.
 or directly from github.
 
 ~~~.sh
-    pip install -U git+
+    pip install -U git+https://github.com/oxpig/kasearch
 ~~~
+
+
+Additionally, you need a version of [ANARCI](https://github.com/oxpig/ANARCI) in the same environment.
 
 ----------
 
 # Searching with KA-Search
 
-**A Jupyter notebook** showcasing KA-Search can be found [here](https://github.com/TobiasHeOl/AbLang/tree/main/examples). 
+**A Jupyter notebook** showcasing KA-Search can be found [here](https://github.com/oxpig/kasearch/tree/main/examples). 
 
 ## Align query sequence
 
