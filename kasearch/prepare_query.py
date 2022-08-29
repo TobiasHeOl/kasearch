@@ -10,10 +10,11 @@ class AlignSequences:
     """
     Align sequences for KA-Search. 
     """
-    def __init__(self, seqs, allowed_species=['Human', 'Mouse'], n_jobs=1):
+    def __init__(self, seqs, allowed_species=['Human', 'Mouse'], n_jobs=1, oas_source=False):
         
+        self._oas_source = oas_source
         self.n_jobs = n_jobs
-        self._unusual_sequence = np.zeros(canonical_numbering_len, np.int8)
+        self._abnormal_sequence = np.zeros(canonical_numbering_len, np.int8)
         
         if allowed_species:
             self.allowed_species = [i.lower() for i in allowed_species]
@@ -31,7 +32,14 @@ class AlignSequences:
             numbered_sequence, _ = number(seq, allowed_species=self.allowed_species)
             return canonical_alignment(numbered_sequence)
         except Exception:
-            return self._unusual_sequence
+            return self._abnormal_sequence
+        
+    def _canonical_alignment_oas(self, sequence):
+        
+        try:
+            return canonical_alignment_oas(sequence)
+        except Exception:
+            return self._abnormal_sequence
     
     def _many_canonical_alignment(self, seqs):
         """
@@ -40,6 +48,9 @@ class AlignSequences:
         
         n_jobs = len(seqs) if len(seqs) <  self.n_jobs else self.n_jobs
         chunksize=len(seqs) // n_jobs
+        
+        if self._oas_source:
+            return np.array([self._canonical_alignment_oas(sequence) for sequence in seqs])
 
         with Pool(processes=n_jobs) as pool:
             return Sequences(np.array(pool.map(self._canonical_alignment, seqs, chunksize=chunksize)))
