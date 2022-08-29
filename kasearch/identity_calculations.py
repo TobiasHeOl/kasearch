@@ -5,7 +5,7 @@ import numpy as np
 from multiprocessing import Pool
 from kasearch.canonical_alignment import all_cdrs_mask, cdr3_mask, reg_def
 
-default_region_masks = np.stack([np.ones(200, dtype = np.int8), all_cdrs_mask, cdr3_mask])
+default_region_masks = np.stack([np.ones(200, dtype = np.uint8), all_cdrs_mask, cdr3_mask])
 default_length_matched = np.array([False,True,True], dtype = bool)
 
 @jax.jit
@@ -23,7 +23,7 @@ def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, len
     len1, len2 = mask1 @ masks, mask2 @ masks
     region_overlap = overlapping_residues @ masks
     identities = ((region_overlap / len1) + (region_overlap / len2)) * (~length_matched | (len1==len2)) / 2
-    
+
     return identities
 
 
@@ -37,11 +37,12 @@ def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
     seq_identity_matrix = calculate_seq_ids_multiquery(query, targets, region_masks, length_matched)
     seq_identity_matrix = np.array(seq_identity_matrix)
     seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
-    
+
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=1)  # partition by seq_id
     n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=1)[:,:n]
 
     broadcasted_ids = np.broadcast_to(target_ids[:, None], (query.shape[0], targets.shape[0], region_masks.shape[0], 2))
+
     n_highest_ids = np.take_along_axis(broadcasted_ids, position_of_n_best[:, :, :, None], axis=1)[:,:n]
 
     return n_highest_identities, n_highest_ids
