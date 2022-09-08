@@ -72,12 +72,12 @@ def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
     seq_identity_matrix = np.array(seq_identity_matrix)
     seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
 
-    position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=1)  # partition by seq_id
-    n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=1)[:,:n]
+    position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id
+    n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=0)[:n]
 
-    broadcasted_ids = np.broadcast_to(target_ids[:, None], (query.shape[0], targets.shape[0], region_masks.shape[0], 2))
+    broadcasted_ids = np.broadcast_to(target_ids[:, None, None], (targets.shape[0], query.shape[0], region_masks.shape[0], 2))
 
-    n_highest_ids = np.take_along_axis(broadcasted_ids, position_of_n_best[:, :, :, None], axis=1)[:,:n]
+    n_highest_ids = np.take_along_axis(broadcasted_ids, position_of_n_best[:, :, :, None], axis=0)[:n]
 
     return n_highest_identities, n_highest_ids
 
