@@ -68,7 +68,7 @@ def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
     
     n = len(targets)-1 if len(targets) < n else n # Adjusts for large n's
     
-    seq_identity_matrix = calculate_seq_ids_multiquery(query, targets, region_masks, length_matched)
+    seq_identity_matrix = calculate_seq_ids_multiquery(targets, query, region_masks, length_matched)
     seq_identity_matrix = np.array(seq_identity_matrix)
     seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
 
