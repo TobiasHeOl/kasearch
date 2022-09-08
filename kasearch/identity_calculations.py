@@ -1,20 +1,33 @@
+import os
+from multiprocessing import cpu_count, Pool
+
+# This has to be set before jax is imported, but we should think of a better way to set it
+os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={cpu_count()-2}"
+
 import jax
 import jax.numpy as jnp
 
+from functools import partial
 import numpy as np 
-from multiprocessing import Pool
 from kasearch.canonical_alignment import all_cdrs_mask, cdr3_mask, reg_def
 
 default_region_masks = np.stack([np.ones(200, dtype = np.uint8), all_cdrs_mask, cdr3_mask])
 default_length_matched = np.array([False,True,True], dtype = bool)
 
-@jax.jit
-def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched):
 
-    masks, length_matched = jnp.array(region_masks.T), jnp.array(length_matched)
-    
-    abs1 = jax.lax.stop_gradient(jnp.expand_dims(array_of_abs1, axis=1))
-    abs2 = jax.lax.stop_gradient(jnp.expand_dims(array_of_abs2, axis=0))
+@partial(jax.jit, static_argnums=1)
+def chunk(array, chunks):
+    old_size = array.shape[0]
+    if old_size % chunks != 0:
+        chunk_size = old_size//chunks + 1
+        array = jnp.pad(array, ((0,chunks*(chunk_size) - old_size),(0,0)), constant_values=0)
+    else:
+        chunk_size = old_size//chunks
+    return array.reshape(chunks, chunk_size, array.shape[-1])
+
+
+@jax.jit
+def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched):
     comparison = abs1 == abs2
 
     mask1, mask2 = abs1 != 0, abs2 != 0
@@ -23,8 +36,29 @@ def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, len
     len1, len2 = mask1 @ masks, mask2 @ masks
     region_overlap = overlapping_residues @ masks
     identities = ((region_overlap / len1) + (region_overlap / len2)) * (~length_matched | (len1==len2)) / 2
-
     return identities
+
+
+@jax.jit
+def _calculate_chunked_sequence_identity(abs1, abs2, masks, length_matched):
+    outs =  []
+    for i in range(abs2.shape[0]):
+        outs.append(_calculate_single_sequence_identity(abs1, abs2[i], masks, length_matched))
+    return jnp.stack(outs, axis = 2)
+
+
+calculate_many_sequence_identities = jax.pmap(_calculate_chunked_sequence_identity, in_axes=(0,None,None,None))
+
+
+def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched):
+    masks, length_matched = jnp.array(region_masks.T), jnp.array(length_matched)
+
+    abs1 = chunk(jax.lax.stop_gradient(array_of_abs1), jax.device_count())
+    abs2 = jax.lax.stop_gradient(array_of_abs2)
+    unchunked_shape = (abs1.shape[0]*abs1.shape[1],abs2.shape[0],region_masks.shape[0])
+    
+    identities = calculate_many_sequence_identities(abs1, abs2, masks, length_matched)
+    return identities.reshape(unchunked_shape)[:array_of_abs1.shape[0]]
 
 
 
