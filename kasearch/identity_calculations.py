@@ -79,7 +79,7 @@ def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
 
     n_highest_ids = np.take_along_axis(broadcasted_ids, position_of_n_best[:, :, :, None], axis=0)[:n]
 
-    return n_highest_identities, n_highest_ids
+    return n_highest_identities.transpose((1,0,2)), n_highest_ids.transpose((1,0,2))
 
 
 def slow_calculate_seq_id(ab1, ab2):
