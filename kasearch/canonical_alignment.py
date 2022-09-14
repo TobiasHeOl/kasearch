@@ -58,9 +58,9 @@ reg_def["CDR2"] = list(range(56, 65 + 1))
 reg_def["CDR3"] = list(range(105, 117 + 1))
 reg_def["CDR_all"] = reg_def["CDR1"] + reg_def["CDR2"] + reg_def["CDR3"]
 
-cdr3_mask = np.array([int(canonical_numbering[i][:-1]) in reg_def["CDR3"] for i in range(len(canonical_numbering))], dtype = np.int8)
+cdr3_mask = np.array([int(canonical_numbering[i][:-1]) in reg_def["CDR3"] for i in range(len(canonical_numbering))], dtype = np.uint8)
 all_cdrs_mask = np.array(
-    [int(canonical_numbering[i][:-1]) in reg_def["CDR_all"] for i in range(len(canonical_numbering))], dtype = np.int8)
+    [int(canonical_numbering[i][:-1]) in reg_def["CDR_all"] for i in range(len(canonical_numbering))], dtype = np.uint8)
 
 
 def get_region_mask(region):
@@ -69,7 +69,7 @@ def get_region_mask(region):
     """
     
     if region == 'whole':
-        return np.ones(200, dtype = np.int8)
+        return np.ones(200, dtype = np.uint8)
     elif region == 'cdrs':
         return all_cdrs_mask
     elif region == 'cdr3':
@@ -77,7 +77,7 @@ def get_region_mask(region):
     else:
         assert np.all([i in canonical_numbering for i in region]), "At least one position in the user defined region, is not part of the 200 used positions. \
         Please remove such positions."
-        return np.array([i in region for i in canonical_numbering], dtype = np.int8)
+        return np.array([i in region for i in canonical_numbering], dtype = np.uint8)
 
 
 def canonical_alignment(anarci_output):
@@ -110,4 +110,4 @@ def canonical_alignment_oas(anarci_output):
         sequence[i] = int.from_bytes(seq.encode(), 'big')
 
     sequence[(sequence == 45)] = 0
-    return sequence
+    return 

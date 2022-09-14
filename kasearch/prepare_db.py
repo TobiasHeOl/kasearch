@@ -79,6 +79,7 @@ class PrepareDB:
         sequence_alignments = AlignSequences(n_jobs=self.n_jobs, allowed_species=[species],oas_source=self._oas_source)(sequences)
         
         if not sequence_lines: sequence_lines = range(len(sequences))
+
         sequence_idxs = np.array([[file_id, i] for i in sequence_lines], np.int32)
         
         self._update_tmpDB(sequences, sequence_alignments, sequence_idxs, chain, species)
