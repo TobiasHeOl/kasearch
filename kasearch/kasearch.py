@@ -16,7 +16,6 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
                  allowed_species='Any',
                  regions=['whole', 'cdrs', 'cdr3'],
                  length_matched=[False,True,True],
-                 id_to_study_file=None,
                 ):
         super().__init__()
         

@@ -1,102 +1,87 @@
 import os
 import uuid
+import collections
 from dataclasses import dataclass
 from multiprocessing import Pool
 
 import numpy as np
+import pandas as pd
 
-from kasearch.species_anarci import number
-from kasearch.canonical_alignment import canonical_alignment, canonical_alignment_oas, canonical_numbering_len
+from kasearch import AlignSequences
+from kasearch.merge_db import merge_files
+
 
 class PrepareDB:
     
-    def __init__(self, db_path, oas_source=False):
+    def __init__(self, db_path, n_jobs=1, oas_source=False):
         
         os.makedirs(db_path, exist_ok=True)
         self.db_path = db_path
+        self.id_to_study = {}
+        self.n_jobs = n_jobs
         self._file_suffix = 0
         self._oas_source = oas_source
         
-        self._abnormal_sequence = np.zeros(canonical_numbering_len, np.int8)
-        self.tmpDB = tmpDB({}, {}, {}, {}, {})
-    
-    def _canonical_alignment_oas(self, sequence):
-        
-        try:
-            return canonical_alignment_oas(sequence)
-        except Exception:
-            return self._abnormal_sequence
-    
-    def _canonical_alignment(self, sequence):
-        try:
-            return canonical_alignment(sequence)
-        except Exception:
-            return self._abnormal_sequence
-    
-    def _many_canonical_alignment(self, sequence_dataset):
-        
-        if self._oas_source:
-            return np.array([self._canonical_alignment_oas(sequence) for sequence in sequence_dataset])
-        else:
-            return np.array([self._canonical_alignment(sequence) for sequence in sequence_dataset])
+        self.tmpDB = tmpDB(collections.defaultdict(dict), 
+                           collections.defaultdict(dict), 
+                           collections.defaultdict(dict), 
+                           collections.defaultdict(dict), 
+                           collections.defaultdict(dict))
         
     def _update_tmpDB(self, sequences, sequence_alignments, sequence_idxs, chain, species):
         
-        if chain not in self.tmpDB.sequences_count:
-            self.tmpDB.sequences_count[chain] = {}
-            self.tmpDB.sequences[chain] = {}
-            self.tmpDB.sequences_idxs[chain] = {}
-            self.tmpDB.abnormal_sequences[chain] = {}
-            self.tmpDB.abnormal_sequences_idxs[chain] = {}
-            
         if species not in self.tmpDB.sequences_count[chain]:
             self.tmpDB.sequences_count[chain][species] = 0
             self.tmpDB.sequences[chain][species] = []
             self.tmpDB.sequences_idxs[chain][species] = []
-            self.tmpDB.abnormal_sequences[chain][species] = []
-            self.tmpDB.abnormal_sequences_idxs[chain][species] = []
+            self.tmpDB.unusual_sequences[chain][species] = []
+            self.tmpDB.unusual_sequences_idxs[chain][species] = []
             
         self.tmpDB.sequences_count[chain][species] += len(sequences)
         
-        abnormal_sequence_idxs = np.where(0 == sequence_alignments.sum(-1))
+        unusual_sequence_idxs = np.where(0 == sequence_alignments.sum(-1))
         normal_sequence_idxs = np.where(0 != sequence_alignments.sum(-1))
 
         if normal_sequence_idxs[0] != []:
             self.tmpDB.sequences[chain][species].append(sequence_alignments[normal_sequence_idxs])
             self.tmpDB.sequences_idxs[chain][species].append(sequence_idxs[normal_sequence_idxs])
         
-        if abnormal_sequence_idxs[0] != []:
-            self.tmpDB.abnormal_sequences[chain][species].append(
-                sequences[abnormal_sequence_idxs])
-            self.tmpDB.abnormal_sequences_idxs[chain][species].append(
-                sequence_idxs[abnormal_sequence_idxs])
+        if unusual_sequence_idxs[0] != []:
+            self.tmpDB.unusual_sequences[chain][species].append(
+                sequences[unusual_sequence_idxs])
+            self.tmpDB.unusual_sequences_idxs[chain][species].append(
+                sequence_idxs[unusual_sequence_idxs])
     
     def _save_data_subset(self, sequence_alignments, sequence_idxs, chain, species, suffix = ''):
         
-        if suffix == None:
-            suffix = self._file_suffix
-            
-        unique_id = str(uuid.uuid4())
+        if suffix == None: suffix = self._file_suffix
+ 
         save_folder = os.path.join(self.db_path, chain, species)
-        save_file = os.path.join(save_folder, "data-subset-{}-{}.npz".format(suffix, unique_id))
+        save_file = os.path.join(save_folder, "data-subset-{}-{}.npz".format(suffix, str(uuid.uuid4())))
         os.makedirs(save_folder, exist_ok=True)
         
         np.savez_compressed(save_file, 
                             numberings=np.concatenate(sequence_alignments[chain][species]), 
                             idxs=np.concatenate(sequence_idxs[chain][species]))
         
-    def prepare_database(self, sequence_dataset, file_id, sequence_lines = None, chain='Heavy', species='Human'):
+    def prepare_sequences(self, data_unit_file, file_id, sequence_lines = None, chain='Heavy', species='Human', pre_calculated_anarci = None):
         """
         Prepares the new database. If a subset contains more than 50 million sequences, save that subset.
         """
         
-        if not sequence_lines:
-            sequence_lines = range(len(sequence_dataset))
+        self.id_to_study[file_id] = data_unit_file
         
-        sequence_alignments = self._many_canonical_alignment(sequence_dataset)
+        if pre_calculated_anarci is None:
+            sequences = pd.read_csv(data_unit_file, header=1, usecols=['sequence_alignment_aa']).iloc[:,0].values
+        else:
+            sequences = pre_calculated_anarci
+                
+        sequence_alignments = AlignSequences(n_jobs=self.n_jobs, allowed_species=[species],oas_source=self._oas_source)(sequences)
+        
+        if not sequence_lines: sequence_lines = range(len(sequences))
         sequence_idxs = np.array([[file_id, i] for i in sequence_lines], np.int32)
         
-        self._update_tmpDB(sequence_dataset, sequence_alignments, sequence_idxs, chain, species)
+        self._update_tmpDB(sequences, sequence_alignments, sequence_idxs, chain, species)
         
         if self.tmpDB.sequences_count[chain][species]>4_000_000:
             
@@ -109,6 +94,8 @@ class PrepareDB:
             self.tmpDB.sequences_count[chain][species] = 0
             self.tmpDB.sequences[chain][species] = []
             self.tmpDB.sequences_idxs[chain][species] = []
+            
+    
        
     def save_database(self):
         
@@ -121,12 +108,19 @@ class PrepareDB:
                                            suffix = 'normal'
                                           )
                     
-                if self.tmpDB.abnormal_sequences[chain][species] != []:
-                    self._save_data_subset(self.tmpDB.abnormal_sequences, 
-                                           self.tmpDB.abnormal_sequences_idxs, 
+                if self.tmpDB.unusual_sequences[chain][species] != []:
+                    self._save_data_subset(self.tmpDB.unusual_sequences, 
+                                           self.tmpDB.unusual_sequences_idxs, 
                                            chain, species,
                                            suffix = 'unusual'
                                           )
+                    
+        with open(os.path.join(self.db_path, "id_to_study.txt"), "w") as handle: 
+            handle.write(str(self.id_to_study))
+            
+    def merge_sequence_files(self):
+        
+        merge_files(self.db_path)
     
     
     
@@ -141,5 +135,5 @@ class tmpDB:
     sequences_count: dict
     sequences: dict
     sequences_idxs: dict
-    abnormal_sequences: dict
-    abnormal_sequences_idxs: dict
+    unusual_sequences: dict
+    unusual_sequences_idxs: dict

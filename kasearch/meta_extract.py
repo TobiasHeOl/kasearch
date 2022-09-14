@@ -41,7 +41,7 @@ class ExtractMetadata:
                             header=1, 
                             skiprows=[x+2 for x in range(line_ids.max()) if x not in line_ids], 
                             nrows=len(line_ids))
-        
+
         for key in sequence_meta.keys():
             sequence_data[key] = sequence_meta[key]
         sequence_data["rank"] = idxs[np.argsort(line_ids)][:,-1]
