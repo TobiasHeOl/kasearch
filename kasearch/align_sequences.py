@@ -13,7 +13,7 @@ class AlignSequences:
         
         self._oas_source = oas_source
         self.n_jobs = n_jobs
-        self._abnormal_sequence = np.zeros(canonical_numbering_len, np.int8)
+        self._unusual_sequence = np.zeros(canonical_numbering_len, np.int8)
         
         if allowed_species:
             self.allowed_species = [i.lower() for i in allowed_species]

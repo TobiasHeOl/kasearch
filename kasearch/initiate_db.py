@@ -19,7 +19,7 @@ class InitiateDatabase:
             if not glob.glob(os.path.join(db_folder, "oasdb_small*")):
                 print("Downloading a small version of OAS (4.4GB) ...")
                 
-                url = "https://zenodo.org/record/6668747/files/oasdb_small.tar"
+                url = "https://zenodo.org/record/7079547/files/oasdb_small.tar"
                 tmp_file = os.path.join(db_folder, "tmp.tar")
 
                 with open(tmp_file,'wb') as f: f.write(requests.get(url).content)
