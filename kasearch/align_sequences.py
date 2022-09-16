@@ -39,6 +39,12 @@ class AlignSequences:
             return canonical_alignment_oas(seq)
         except Exception:
             return self._unusual_sequence
+        
+    def _fast_canonical_alignment_oas(self, numbered_seq):
+        try:
+            return canonical_alignment(seq[0][0])
+        except Exception:
+            return self._unusual_sequence
             
     def _many_canonical_alignment(self, seqs):
         """
@@ -50,8 +56,12 @@ class AlignSequences:
         elif self._if_fast:
             numbered_seqs = many_number(seqs, allowed_species=self.allowed_species, n_jobs=self.n_jobs)
             assert numbered_seqs, "Target DB contains sequences breaking ANARCI."
-                        
-            return np.array([canonical_alignment(seq[0][0]) if seq!=None else self._unusual_sequence for seq in numbered_seqs])
+            
+            n_jobs = len(numbered_seqs) if len(numbered_seqs) <  self.n_jobs else self.n_jobs
+            chunksize=len(numbered_seqs) // n_jobs
+
+            with Pool(processes=n_jobs) as pool:
+                return np.array(pool.map(self._fast_canonical_alignment_oas, numbered_seqs, chunksize=chunksize))
         
         else:
             n_jobs = len(seqs) if len(seqs) <  self.n_jobs else self.n_jobs
