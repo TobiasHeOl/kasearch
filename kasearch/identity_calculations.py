@@ -2,7 +2,7 @@ import os
 from multiprocessing import cpu_count, Pool
 
 # This has to be set before jax is imported, but we should think of a better way to set it
-os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={cpu_count()-2}"
+os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={cpu_count()}" #f"--xla_force_host_platform_device_count={cpu_count()-2}"
 
 import jax
 import jax.numpy as jnp
@@ -41,9 +41,9 @@ def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched):
 
 @jax.jit
 def _calculate_chunked_sequence_identity(abs1, abs2, masks, length_matched):
-    outs =  []
-    for i in range(abs2.shape[0]):
-        outs.append(_calculate_single_sequence_identity(abs1, abs2[i], masks, length_matched))
+    
+    outs = [_calculate_single_sequence_identity(abs1, ab2, masks, length_matched) for ab2 in abs2]
+    
     return jnp.stack(outs, axis = 2)
 
 
@@ -52,7 +52,7 @@ calculate_many_sequence_identities = jax.pmap(_calculate_chunked_sequence_identi
 
 def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched):
     masks, length_matched = jnp.array(region_masks.T), jnp.array(length_matched)
-
+    
     abs1 = chunk(jax.lax.stop_gradient(array_of_abs1), jax.device_count())
     abs2 = jax.lax.stop_gradient(array_of_abs2)
     unchunked_shape = (abs1.shape[0]*abs1.shape[1],abs2.shape[0],region_masks.shape[0])

@@ -1,4 +1,4 @@
-from anarci import validate_sequence, anarci, chain_type_to_class, scheme_short_to_long
+from anarci import validate_sequence, anarci, chain_type_to_class, scheme_short_to_long, run_anarci
 
 
 # Wrapper function for simple sequence in numbering and chain type out behaviour.
@@ -48,3 +48,25 @@ def get_chain(alignment_details):
     
     elif (chain == 'L') or (chain == 'K'):
         return "Light"
+    
+    
+def many_number(sequences, scheme="imgt", database="ALL", allow=set(["H", "K", "L"]), allowed_species=None, n_jobs=1):
+    """
+    Less robust, but much faster anarci numbering.
+    """
+    sequences = [("sequence_{}".format(num), sequence) for num, sequence in enumerate(sequences)]
+    try:
+        numbered_seqs, _, _ = run_anarci(sequences, 
+                                     scheme=scheme, 
+                                     database=database,
+                                     allow=allow, 
+                                     allowed_species=allowed_species,
+                                     ncpu=n_jobs,
+                                    )
+        
+        return numbered_seqs
+    
+    except Exception:  # Catch where the user has tried to number a TCR with an antibody scheme
+        return False
+            
+    

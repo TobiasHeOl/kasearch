@@ -36,19 +36,17 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         Resets currently most similar sequences.
         """
         
-        self._current_target_numbering = None
-        self._current_target_ids = None
         self.current_best_identities = np.zeros((qsize, 1, self.region_masks.shape[0]), np.float16) - 1
         self.current_best_ids = np.zeros((qsize, 1, self.region_masks.shape[0], 2), np.int32) - 1
 
-    def __update_best(self, query, keep_best_n):
+    def __update_best(self, query, _current_target_numbering, _current_target_ids, keep_best_n):
         """
         Update the current most similar sequences.
         """
         
         chunk_best_identities, chunk_best_ids = get_n_most_identical_multiquery(query,
-                                                                                self._current_target_numbering,
-                                                                                self._current_target_ids, 
+                                                                                _current_target_numbering,
+                                                                                _current_target_ids, 
                                                                                 n=keep_best_n,
                                                                                 region_masks=self.region_masks, 
                                                                                 length_matched=self.length_matched
@@ -60,7 +58,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         order = np.argsort(-all_identities, axis=1)
 
         self.current_best_identities = np.take_along_axis(all_identities, order, axis=1)[:, :keep_best_n]
-        self.current_best_ids = np.take_along_axis(all_ids, order[:, :, :, None], axis=1)[:, :keep_best_n]
+        self.current_best_ids = np.take_along_axis(all_ids, order[:, :, :, None], axis=1)[:, :keep_best_n]        
         
     def search(self, query, keep_best_n=10):
         """
@@ -70,16 +68,14 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         self.__reset_current_best(query.shape[0])
 
         data_loader = DataLoader(self.files_to_search_normal[0])
-        self._current_target_numbering = data_loader.data['numberings']
-        self._current_target_ids = data_loader.data['idxs']
+        _current_target_numbering, _current_target_ids = data_loader.data['numberings'], data_loader.data['idxs']
         
         for file in self.files_to_search_normal[1:]:
             data_loader = DataLoader(file)
-            self.__update_best(query, keep_best_n)
-            self._current_target_numbering = data_loader.data['numberings']
-            self._current_target_ids = data_loader.data['idxs']
+            self.__update_best(query, _current_target_numbering, _current_target_ids, keep_best_n)
+            _current_target_numbering, _current_target_ids = data_loader.data['numberings'], data_loader.data['idxs']
                 
-        self.__update_best(query, keep_best_n)
+        self.__update_best(query, _current_target_numbering, _current_target_ids, keep_best_n)
         
     def get_meta(self, n_query = 0, n_region = 0, n_sequences = 'all', n_jobs=1):
         """

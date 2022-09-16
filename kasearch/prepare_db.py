@@ -76,7 +76,7 @@ class PrepareDB:
         else:
             sequences = pre_calculated_anarci
                 
-        sequence_alignments = AlignSequences(n_jobs=self.n_jobs, allowed_species=[species],oas_source=self._oas_source)(sequences)
+        sequence_alignments = AlignSequences(n_jobs=self.n_jobs, allowed_species=[species],oas_source=self._oas_source, if_fast=True)(sequences)
         
         if not sequence_lines: sequence_lines = range(len(sequences))
 
