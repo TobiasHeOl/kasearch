@@ -2,10 +2,11 @@ import os
 from multiprocessing import cpu_count, Pool
 
 # This has to be set before jax is imported, but we should think of a better way to set it
-#os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={cpu_count()}" #f"--xla_force_host_platform_device_count={cpu_count()-2}"
+os.environ["XLA_FLAGS"]= f"--xla_force_host_platform_device_count={cpu_count()-2}" 
 
 import jax
 import jax.numpy as jnp
+
 
 from functools import partial
 import numpy as np 
@@ -57,8 +58,9 @@ def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, len
     abs2 = jax.lax.stop_gradient(array_of_abs2)
     
     identities = calculate_many_sequence_identities(abs1, abs2, masks, length_matched)
+    identities = jax.lax.transpose(identities,(0,1,3,2)).reshape(-1, array_of_abs2.shape[0], len(region_masks))[:array_of_abs1.shape[0]]   
     
-    return identities.transpose(0,1,3,2).squeeze(0) 
+    return identities
 
 
 def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
