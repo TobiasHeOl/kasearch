@@ -64,9 +64,18 @@ all_cdrs_mask = np.array(
 
 
 def get_region_mask(region):
-    """
-    Get mask for a specific region.
-    """
+    """Retrieve mask for a specific region.
+    
+    Parameters
+    ----------
+    region : list
+        List of unique positions from the canonical alignment to not mask
+
+    Returns
+    -------
+    numpy array
+        Specific region mask
+    """     
     
     if region == 'whole':
         return np.ones(200, dtype = np.uint8)
@@ -81,8 +90,17 @@ def get_region_mask(region):
 
 
 def canonical_alignment(anarci_output):
-    """
-    Alignment of anarci output
+    """Alignment of ANARCI output.
+    
+    Parameters
+    ----------
+    anarci_output : dict
+        ANARCI numbering of a sequence
+
+    Returns
+    -------
+    numpy array
+        Canonical alignment of a sequence
     """
 
     sequence = np.zeros(canonical_numbering_len, np.int8)
@@ -97,11 +115,22 @@ def canonical_alignment(anarci_output):
     sequence[(sequence == 45)] = 0
     return sequence
 
+
 oas_numbering_finder = re.compile('\d+.\'\: \'[A-Z]')
 def canonical_alignment_oas(anarci_output):
+    """OAS derived ANARCI output.
+    
+    Parameters
+    ----------
+    anarci_output : dict
+        OAS derived ANARCI numbering of a sequence
+
+    Returns
+    -------
+    numpy array
+        Canonical alignment of a sequence
     """
-    OAS has a different anarci output.
-    """
+    
     sequence = np.zeros(canonical_numbering_len, np.int8)
 
     for res in oas_numbering_finder.findall(anarci_output):

@@ -45,7 +45,7 @@ def _calculate_chunked_sequence_identity(abs1, abs2, masks, length_matched):
     
     outs = [_calculate_single_sequence_identity(abs1, ab2, masks, length_matched) for ab2 in abs2]
     
-    return jnp.stack(outs, axis = 2)
+    return jax.lax.transpose(jnp.stack(outs, axis = 2),(0,2,1))
 
 
 calculate_many_sequence_identities = jax.pmap(_calculate_chunked_sequence_identity, in_axes=(0,None,None,None))
@@ -57,10 +57,9 @@ def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, len
     abs1 = chunk(jax.lax.stop_gradient(array_of_abs1), jax.device_count())
     abs2 = jax.lax.stop_gradient(array_of_abs2)
     
-    identities = calculate_many_sequence_identities(abs1, abs2, masks, length_matched)
-    identities = jax.lax.transpose(identities,(0,1,3,2)).reshape(-1, array_of_abs2.shape[0], len(region_masks))[:array_of_abs1.shape[0]]   
+    identities = np.array(calculate_many_sequence_identities(abs1, abs2, masks, length_matched))
     
-    return identities
+    return identities.reshape(-1, array_of_abs2.shape[0], len(region_masks))[:array_of_abs1.shape[0]]   
 
 
 def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
@@ -70,7 +69,6 @@ def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
     n = len(targets)-1 if len(targets) < n else n # Adjusts for large n's
     
     seq_identity_matrix = calculate_seq_ids_multiquery(targets, query, region_masks, length_matched)
-    seq_identity_matrix = np.array(seq_identity_matrix)
     seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
 
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id

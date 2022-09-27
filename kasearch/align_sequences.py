@@ -7,8 +7,9 @@ from kasearch.canonical_alignment import canonical_alignment, canonical_alignmen
 
 class AlignSequences:
     """
-    Align sequences for KA-Search. 
+    Canonical alignment of sequences for KA-Search.  
     """
+    
     def __init__(self, allowed_species=['Human', 'Mouse'], n_jobs=1, oas_source=False, if_fast=False):
         
         self._oas_source = oas_source
@@ -22,9 +23,19 @@ class AlignSequences:
             self.allowed_species = None
         
     def _canonical_alignment(self, seq):
-        """
-        Alignment of a single sequence.
-        """       
+        """Canonical alignment of a single sequence.
+        
+        Parameters
+        ----------
+        seq : str
+            Antibody sequence to align
+
+        Returns
+        -------
+        numpy array
+            Canonical alignment of a single sequence
+        """ 
+        
         try:
             numbered_sequence, _ = number(seq, allowed_species=self.allowed_species)
             return canonical_alignment(numbered_sequence)
@@ -32,24 +43,57 @@ class AlignSequences:
             return self._unusual_sequence
         
     def _canonical_alignment_oas(self, seq):
+        """Canonical alignment of OAS derived ANARCI numberings.
+        
+        Parameters
+        ----------
+        seq : dict
+            OAS derived ANARCI numberings
+
+        Returns
+        -------
+        numpy array
+            Canonical alignment of a single sequence
         """
-        Alignment of ANARCI results from OAS.
-        """
+        
         try:
             return canonical_alignment_oas(seq)
         except Exception:
             return self._unusual_sequence
         
-    def _fast_canonical_alignment_oas(self, numbered_seq):
+    def _fast_canonical_alignment(self, numbered_seq):
+        """Canonical alignment of ANARCI numberings.
+        
+        Parameters
+        ----------
+        seq : dict
+            Nested ANARCI numberings
+
+        Returns
+        -------
+        numpy array
+            Canonical alignment of a single sequence
+        """
+        
         try:
             return canonical_alignment(seq[0][0])
         except Exception:
             return self._unusual_sequence
             
     def _many_canonical_alignment(self, seqs):
+        """Canonical alignment of many sequences.
+        
+        Parameters
+        ----------
+        seqs : list
+            List of antibody sequences
+
+        Returns
+        -------
+        numpy array
+            Canonical alignments of many sequences
         """
-        Alignment of multiple sequences.
-        """
+        
         if self._oas_source:
             return np.array([self._canonical_alignment_oas(seq) for seq in seqs])
         
@@ -61,7 +105,7 @@ class AlignSequences:
             chunksize=len(numbered_seqs) // n_jobs
 
             with Pool(processes=n_jobs) as pool:
-                return np.array(pool.map(self._fast_canonical_alignment_oas, numbered_seqs, chunksize=chunksize))
+                return np.array(pool.map(self._fast_canonical_alignment, numbered_seqs, chunksize=chunksize))
         
         else:
             n_jobs = len(seqs) if len(seqs) <  self.n_jobs else self.n_jobs
