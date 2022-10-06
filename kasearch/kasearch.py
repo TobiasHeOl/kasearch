@@ -10,6 +10,26 @@ from kasearch.initiate_db import InitiateDatabase
 from kasearch.canonical_alignment import get_region_mask
 
 class SearchDB(InitiateDatabase, ExtractMetadata):
+    """
+    The main class for searching and retrieving meta data with KA-Search. 
+
+    ...
+
+    Attributes
+    ----------
+    current_best_identities : array_like
+        Array of the ordered closest identities
+    files_to_search_normal : list of str
+        List of files that will be searched
+
+    Methods
+    -------
+    search(query, keep_best_n=10)
+        Search files in files_to_search_normal with query
+    get_meta(n_query = 0, n_region = 0, n_sequences = 'all', n_jobs = 1)
+        Retrieve meta data for n_query spanning n_region and returning n_sequences
+    """
+    
     def __init__(self, 
                  database_path='oasdb-small', 
                  allowed_chain='Any', 
@@ -61,8 +81,14 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         self.current_best_ids = np.take_along_axis(all_ids, order[:, :, :, None], axis=1)[:, :keep_best_n]        
         
     def search(self, query, keep_best_n=10):
-        """
-        Search database for sequences most similar to the queries.
+        """Search database for sequences most similar to the queries.
+        
+        Parameters
+        ----------
+        query : str
+            Antibody sequence to search with
+        keep_best_n : int
+            Number of closest matches to return (default is 10)
         """
         
         self.__reset_current_best(query.shape[0])
@@ -78,8 +104,23 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         self.__update_best(query, _current_target_numbering, _current_target_ids, keep_best_n)
         
     def get_meta(self, n_query = 0, n_region = 0, n_sequences = 'all', n_jobs=1):
-        """
-        Get meta data for the current most similar sequences for a specific query and region.
+        """Retrieve meta data for the current closest sequences for a specific query and region.
+        
+        Parameters
+        ----------
+        n_query : int
+            The index of the query to extract meta data for
+        n_region : int
+            The index of the region to extract meta data for
+        n_sequences : int, str
+            The number of sequences to return, or 'all' for all
+        n_jobs : int
+            The number of threads to use
+
+        Returns
+        -------
+        pandas dataframe
+            A pandas dataframe with the keep_best_n closest sequences, and their meta data, to the specified query and region
         """
         
         if n_sequences == 'all':
