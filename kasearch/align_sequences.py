@@ -76,7 +76,7 @@ class AlignSequences:
         """
         
         try:
-            return canonical_alignment(seq[0][0])
+            return canonical_alignment(numbered_seq[0][0])
         except Exception:
             return self._unusual_sequence
             

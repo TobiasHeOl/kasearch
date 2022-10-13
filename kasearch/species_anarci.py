@@ -54,9 +54,10 @@ def many_number(sequences, scheme="imgt", database="ALL", allow=set(["H", "K", "
     """
     Less robust, but much faster anarci numbering.
     """
-    sequences = [("sequence_{}".format(num), sequence) for num, sequence in enumerate(sequences)]
+    sequences = [("sequence_{}".format(num), sequence) for num, sequence in enumerate(sequences)]   
+    
     try:
-        numbered_seqs, _, _ = run_anarci(sequences, 
+        _, numbered_seqs, _, _ = run_anarci(sequences, 
                                      scheme=scheme, 
                                      database=database,
                                      allow=allow, 
