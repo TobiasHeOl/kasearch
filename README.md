@@ -8,7 +8,7 @@
 ---
     
 by
-Tobias H. Olsen\,$^{1,\dagger}$, Brennan A. Kenyon\,$^{1,\dagger}$, Iain H. Moal\,$^{2}$ and Charlotte M. Deane$^{1,3}$
+Tobias H. Olsen, $^{1,\dagger}$, Brennan A. Kenyon, $^{1,\dagger}$, Iain H. Moal, $^{2}$ and Charlotte M. Deane $^{1,3}$
     
 $^{1}$ Oxford Protein Informatics Group, Department of Statistics, University of Oxford, Oxford, United Kingdom  
 $^{2}$ GSK Medicines Research Centre, GlaxoSmithKline plc, Stevenage, United Kingdom  
