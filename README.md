@@ -5,17 +5,32 @@
  
 # KA-Search: Rapid and exhaustive sequence identity search of known antibodies
 
-
+---
+    
+by
+Tobias H. Olsen\,$^{1,\dagger}$, Brennan A. Kenyon\,$^{1,\dagger}$, Iain H. Moal\,$^{2}$ and Charlotte M. Deane$^{1,3}$
+    
+$^{1}$ Oxford Protein Informatics Group, Department of Statistics, University of Oxford, Oxford, United Kingdom  
+$^{2}$ GSK Medicines Research Centre, GlaxoSmithKline plc, Stevenage, United Kingdom  
+$^{3}$ XXXX, Exscientia plc, Oxford, United Kingdom  
+$^{\dagger}$ These authors contributed equally to this work and share first authorship  
+    
 </div>
 
 
-Antibodies with similar amino acid sequences, especially in the complementary-determining regions (CDRs), often share certain properties. It is often powerful to compare the sequence of an antibody of interest against natural antibody repertoires, as finding similar antibodies in nature can indicate likely specificity or immunogenicity. However, as the number of available antibody repertoire sequences has exceeded a billion and is continuing to grow, repertoire mining for highly similar sequences has become increasingly computationally expensive. Existing approaches are limited by either being low-throughput, non-exhaustive, not antibody-specific, or only searching against entire chain sequences. Therefore, there is a need for a specialized tool, optimized for a rapid and exhaustive search of any antibody region against all known antibodies, to better utilize the full number of available repertoire sequences.
+<!---<div style="text-align:center"><img src="data/tool_comparison.png" width="800"/></div> 
 
-Here, we introduce Known Antibody Search (KA-Search), a tool that allows for rapid search of the 2.4 billion antibodies in the Observed Antibody Space (OAS) database by sequence identity across either the whole chain, the CDRs, or a user defined antibody region. KA-Search can be used to find the most similar sequences from OAS within 20 minutes using 2 CPUs. We demonstrate how KA-Search can be used to obtain new insights about an antibody of interest. KA-Search is freely available at https://github.com/oxpig/kasearch.
+*Speed and sensitivity comparison between KA-Search and three commonly used protein sequence identity search tools. Speed was measured by the time to search 10 million sequence with a single query and sensitivity by how often the tools returned the closest or the closest within the top-100 match for 100 heavy chains against the same 10 million sequences.*
+--->
+
+## Abstract
+Antibodies with similar amino acid sequences, especially across their complementary-determining regions, often share properties. Finding that an antibody of interest has a similar sequence to naturally expressed antibodies in healthy or diseased repertoires is a powerful approach for the prediction of antibody properties, such as immunogenicity or antigen specificity. However, as the number of available antibody sequences is now in the billions and continuing to grow, repertoire mining for similar sequences has become increasingly computationally expensive. Existing approaches are limited by either being low-throughput, non-exhaustive, not antibody-specific, or only searching against entire chain sequences. Therefore, there is a need for a specialized tool, optimized for a rapid and exhaustive search of any antibody region against all known antibodies, to better utilize the full breadth of available repertoire sequences.
+
+We introduce Known Antibody Search (KA-Search), a tool that allows for rapid search of billions of antibody sequences by sequence identity across either the whole chain, the CDRs, or a user defined antibody region. We show KA-Search in operation on the ~2.4 billion antibody sequences available in the OAS database. KA-Search can be used to find the most similar sequences from OAS within 30 minutes using 5 CPUs. We give examples of how KA-Search can be used to obtain new insights about an antibody of interest. KA-Search is freely available at https://github.com/oxpig/kasearch.
 
 -----------
 
-# Install KA-Search
+# Software implementation
 
 KA-Search is freely available and can be installed with pip.
 
@@ -30,9 +45,23 @@ or directly from github.
 ~~~
 
 
-Additionally, you need to install a version of [ANARCI](https://github.com/oxpig/ANARCI) in the same environment.
+**NB:** You need to manually install a version of [ANARCI](https://github.com/oxpig/ANARCI) in the same environment.
 
 ----------
+
+# Download pre-aligned data to search against
+
+This list contains the download links for the paper version of the pre-aligned OAS and any future releases, ready for KA-Search. 
+
+**NB**: The following datasets are large, you should therefore ensure you have enough space before trying to download them.
+
+- (September 2022)(~63GB)(Paper version): [pre-aligned version of OAS with 2.4 billion sequences](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/paper_aligned_oas_sep2022.tar)
+
+
+After downloading, extract the pre-aligned dataset with "tar -xf downloaded_file.tar". Give the extacted dataset path when initiating KA-Search to search against it. See how to do this by following the KA-Search notebook guide below.
+
+
+---------
 
 # KA-Search guide
 
@@ -43,5 +72,14 @@ Additionally, you need to install a version of [ANARCI](https://github.com/oxpig
 
 
 
-### Citation   
-Work in preparation
+### Citation
+
+```
+@article{Olsen2022,
+  title={KA-Search: Rapid and exhaustive sequence identity search of known antibodies},
+  author={Tobias H. Olsen, Brennan A. Kenyon, Iain H. Moal and Charlotte M. Deane},
+  journal={bioRxiv},
+  doi={},
+  year={2022}
+}
+```  

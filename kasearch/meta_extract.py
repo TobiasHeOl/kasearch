@@ -34,6 +34,7 @@ class ExtractMetadata:
         """
         
         study_id = idxs[0,0]
+        
         study_file = self.id_to_study[study_id]
         line_ids = idxs[:,1]
 
