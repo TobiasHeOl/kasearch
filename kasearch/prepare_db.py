@@ -75,7 +75,7 @@ class PrepareDB:
             sequences = pd.read_csv(data_unit_file, header=1, usecols=['sequence_alignment_aa']).iloc[:,0].values
         else:
             sequences = pre_calculated_anarci
-                
+        
         sequence_alignments = AlignSequences(n_jobs=self.n_jobs, allowed_species=[species],oas_source=self._oas_source, if_fast=True)(sequences)
         
         if not sequence_lines: sequence_lines = range(len(sequences))

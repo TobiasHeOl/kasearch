@@ -72,6 +72,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
                                                                                 length_matched=self.length_matched
                                                                                )
         
+        
         all_identities = np.concatenate([chunk_best_identities, self.current_best_identities], axis=1)
         all_ids = np.concatenate([chunk_best_ids, self.current_best_ids], axis=1)
 
@@ -95,6 +96,9 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
 
         data_loader = DataLoader(self.files_to_search_normal[0])
         _current_target_numbering, _current_target_ids = data_loader.data['numberings'], data_loader.data['idxs']
+        
+        keep_best_n = min(keep_best_n, _current_target_numbering.shape[0] - 1) # If trying to keep more than available targets, it breaks
+        
         
         for file in self.files_to_search_normal[1:]:
             data_loader = DataLoader(file)
@@ -128,7 +132,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
             
         assert n_query >= 0
         assert n_region >= 0
-        assert n_sequences > 0
+        assert n_sequences > 0        
         
         metadf = self._extract_meta(self.current_best_ids[n_query, :n_sequences, n_region], n_jobs=n_jobs)
         metadf['Identity'] = self.current_best_identities[n_query, :n_sequences, n_region]
