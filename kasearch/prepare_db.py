@@ -19,7 +19,6 @@ class PrepareDB:
         self.db_path = db_path
         self.id_to_study = {}
         self.n_jobs = n_jobs
-        self._file_suffix = 0
         self._oas_source = oas_source
         
         self.tmpDB = tmpDB(collections.defaultdict(dict), 
@@ -53,8 +52,6 @@ class PrepareDB:
                 sequence_idxs[unusual_sequence_idxs])
     
     def _save_data_subset(self, sequence_alignments, sequence_idxs, chain, species, suffix = ''):
-        
-        if suffix == None: suffix = self._file_suffix
  
         save_folder = os.path.join(self.db_path, chain, species)
         save_file = os.path.join(save_folder, "data-subset-{}-{}.npz".format(suffix, str(uuid.uuid4())))
@@ -64,19 +61,33 @@ class PrepareDB:
                             numberings=np.concatenate(sequence_alignments[chain][species]), 
                             idxs=np.concatenate(sequence_idxs[chain][species]))
         
-    def prepare_sequences(self, data_unit_file, file_id, sequence_lines = None, chain='Heavy', species='Human', pre_calculated_anarci = None):
+    def prepare_sequences(
+        self, 
+        sequence_file, 
+        file_id, 
+        chain='Heavy', 
+        species='Human', 
+        seq_column_name = 'sequence_alignment_aa',
+        sequence_lines = None, 
+        pre_calculated_anarci = None
+    ):
         """
         Prepares the new database. If a subset contains more than 50 million sequences, save that subset.
         """
         
-        self.id_to_study[file_id] = data_unit_file
+        self.id_to_study[file_id] = sequence_file
         
         if pre_calculated_anarci is None:
-            sequences = pd.read_csv(data_unit_file, header=1, usecols=['sequence_alignment_aa']).iloc[:,0].values
+            sequences = pd.read_csv(sequence_file, header=1, usecols=[seq_column_name]).iloc[:,0].values
         else:
             sequences = pre_calculated_anarci
         
-        sequence_alignments = AlignSequences(n_jobs=self.n_jobs, allowed_species=[species],oas_source=self._oas_source, if_fast=True)(sequences)
+        sequence_alignments = AlignSequences(
+            n_jobs=self.n_jobs, 
+            allowed_species=[species],
+            oas_source=self._oas_source, 
+            if_fast=True
+        )(sequences)
         
         if not sequence_lines: sequence_lines = range(len(sequences))
 

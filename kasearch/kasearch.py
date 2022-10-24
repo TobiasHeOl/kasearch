@@ -51,7 +51,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         
         assert len(self.files_to_search_normal) != 0, "DB does not contain data of {} chains from the {} species.".format(allowed_chain, allowed_species)
     
-    def __reset_current_best(self, qsize=1):
+    def _reset_current_best(self, qsize=1):
         """
         Resets currently most similar sequences.
         """
@@ -59,7 +59,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         self.current_best_identities = np.zeros((qsize, 1, self.region_masks.shape[0]), np.float16) - 1
         self.current_best_ids = np.zeros((qsize, 1, self.region_masks.shape[0], 2), np.int32) - 1
 
-    def __update_best(self, query, _current_target_numbering, _current_target_ids, keep_best_n):
+    def _update_best(self, query, _current_target_numbering, _current_target_ids, keep_best_n):
         """
         Update the current most similar sequences.
         """
@@ -92,20 +92,19 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
             Number of closest matches to return (default is 10)
         """
         
-        self.__reset_current_best(query.shape[0])
-
+        self._reset_current_best(query.shape[0])
+        
         data_loader = DataLoader(self.files_to_search_normal[0])
         _current_target_numbering, _current_target_ids = data_loader.data['numberings'], data_loader.data['idxs']
         
         keep_best_n = min(keep_best_n, _current_target_numbering.shape[0] - 1) # If trying to keep more than available targets, it breaks
         
-        
         for file in self.files_to_search_normal[1:]:
             data_loader = DataLoader(file)
-            self.__update_best(query, _current_target_numbering, _current_target_ids, keep_best_n)
+            self._update_best(query, _current_target_numbering, _current_target_ids, keep_best_n)
             _current_target_numbering, _current_target_ids = data_loader.data['numberings'], data_loader.data['idxs']
                 
-        self.__update_best(query, _current_target_numbering, _current_target_ids, keep_best_n)
+        self._update_best(query, _current_target_numbering, _current_target_ids, keep_best_n)
         
     def get_meta(self, n_query = 0, n_region = 0, n_sequences = 'all', n_jobs=1):
         """Retrieve meta data for the current closest sequences for a specific query and region.

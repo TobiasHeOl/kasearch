@@ -31,8 +31,7 @@ class ExtractMetadata:
     def _get_single_study_meta(self, idxs):
         """
         Get meta for all ids from a given study.
-        """
-        
+        """        
         study_id = idxs[0,0]
         
         study_file = self.id_to_study[study_id]
@@ -42,7 +41,7 @@ class ExtractMetadata:
         sequence_data = pd.read_csv(study_file, 
                             header=1, 
                             skiprows=[x+2 for x in range(line_ids.max()) if x not in line_ids], 
-                            nrows=len(line_ids))
+                            nrows=len(line_ids))        
 
         for key in sequence_meta.keys():
             sequence_data[key] = sequence_meta[key]
