@@ -56,7 +56,7 @@ This list contains the download links for the paper version of the pre-aligned O
 
 **NB**: The following datasets are large, you should therefore ensure you have enough space before trying to download them.
 
-- (September 2022)(~63GB)(Paper version): [pre-aligned version of OAS with 2.4 billion sequences](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/paper_aligned_oas_sep2022.tar)
+- [OAS-aligned](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/paper_aligned_oas_sep2022.tar) (Paper version), a pre-aligned version of OAS, from September 2022, with 2.4 billion sequences taking up ~63GB. 
 
 
 After downloading, extract the pre-aligned dataset with "tar -xf downloaded_file.tar". Give the extacted dataset path when initiating KA-Search to search against it. See how to do this by following the KA-Search notebook guide below.
