@@ -72,7 +72,7 @@ class PrepareDB:
         pre_calculated_anarci = None
     ):
         """
-        Prepares the new database. If a subset contains more than 50 million sequences, save that subset.
+        Prepares a new database. 
         """
         
         self.id_to_study[file_id] = sequence_file
@@ -82,9 +82,14 @@ class PrepareDB:
         else:
             sequences = pre_calculated_anarci
         
+        if species != 'Any':
+            anarci_species = [species]
+        else:
+            anarci_species = ['Human', 'Mouse']
+            
         sequence_alignments = AlignSequences(
             n_jobs=self.n_jobs, 
-            allowed_species=[species],
+            allowed_species=anarci_species,
             oas_source=self._oas_source, 
             if_fast=True
         )(sequences)
