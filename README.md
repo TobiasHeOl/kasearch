@@ -69,7 +69,7 @@ After downloading, extract the pre-aligned dataset with "tar -xf downloaded_file
 
 **A Jupyter notebook** showcasing KA-Search can be found [here](https://github.com/oxpig/kasearch/blob/main/notebooks/examples.ipynb). 
 
-KA-Search can also be run using the following [Colab](https://colab.research.google.com/drive/15e41tQYahh5tP_pFNAwqr_aTOAzdXqJA?usp=sharing).
+KA-Search can also be run using the following [Colab](https://colab.research.google.com/github/TobiasHeOl/kasearch/blob/main/notebooks/KAsearch_colab.ipynb).
 
 ---------
 
