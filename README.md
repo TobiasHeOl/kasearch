@@ -82,7 +82,7 @@ KA-Search can also be run using the following [Colab](https://colab.research.goo
   title={KA-Search: Rapid and exhaustive sequence identity search of known antibodies},
   author={Tobias H. Olsen, Brennan A. Kenyon, Iain H. Moal and Charlotte M. Deane},
   journal={bioRxiv},
-  doi={},
+  doi={10.1101/2022.11.01.513855},
   year={2022}
 }
 ```  
