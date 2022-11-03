@@ -139,4 +139,4 @@ def canonical_alignment_oas(anarci_output):
         sequence[i] = int.from_bytes(seq.encode(), 'big')
 
     sequence[(sequence == 45)] = 0
-    return 
+    return sequence
