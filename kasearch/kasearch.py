@@ -47,7 +47,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         self._set_database_path(database_path)
         self._set_files_to_search(allowed_chain, allowed_species)
         
-        self._set_id_to_study(os.path.join(self.database_path, "id_to_study.txt"))
+        self._set_id_to_study(self.database_path)
         
         assert len(self.files_to_search_normal) != 0, "DB does not contain data of {} chains from the {} species.".format(allowed_chain, allowed_species)
     
@@ -81,7 +81,10 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         self.current_best_identities = np.take_along_axis(all_identities, order, axis=1)[:, :keep_best_n]
         self.current_best_ids = np.take_along_axis(all_ids, order[:, :, :, None], axis=1)[:, :keep_best_n]        
         
-    def search(self, query, keep_best_n=10):
+    def search(self, 
+               query, 
+               keep_best_n: int = 10,
+              ):
         """Search database for sequences most similar to the queries.
         
         Parameters
@@ -106,7 +109,12 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
                 
         self._update_best(query, _current_target_numbering, _current_target_ids, keep_best_n)
         
-    def get_meta(self, n_query = 0, n_region = 0, n_sequences = 'all', n_jobs=1):
+    def get_meta(self, 
+                 n_query: int = 0, 
+                 n_region: int = 0, 
+                 n_sequences = 'all', 
+                 n_jobs: int =1
+                ):
         """Retrieve meta data for the current closest sequences for a specific query and region.
         
         Parameters
@@ -136,8 +144,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         metadf = self._extract_meta(self.current_best_ids[n_query, :n_sequences, n_region], n_jobs=n_jobs)
         metadf['Identity'] = self.current_best_identities[n_query, :n_sequences, n_region]
         return metadf
-        
-        
+  
         
 class DataLoader():
     def __init__(self, file):

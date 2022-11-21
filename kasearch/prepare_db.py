@@ -1,4 +1,5 @@
 import os
+import shutil
 import uuid
 import collections
 from dataclasses import dataclass
@@ -13,7 +14,10 @@ from kasearch.merge_db import merge_files
 
 class PrepareDB:
     
-    def __init__(self, db_path, n_jobs=1, oas_source=False):
+    def __init__(self, db_path, n_jobs=1, from_scratch=False, oas_source=False):
+        
+        if from_scratch: 
+            if os.path.exists(db_path): shutil.rmtree(db_path)
         
         os.makedirs(db_path, exist_ok=True)
         self.db_path = db_path
@@ -75,7 +79,9 @@ class PrepareDB:
         Prepares a new database. 
         """
         
-        self.id_to_study[file_id] = sequence_file
+        os.makedirs(os.path.join(self.db_path, 'extra_data'), exist_ok=True)
+
+        self.id_to_study[file_id] = os.path.basename(sequence_file)
         
         if pre_calculated_anarci is None:
             sequences = pd.read_csv(sequence_file, header=1, usecols=[seq_column_name]).iloc[:,0].values
