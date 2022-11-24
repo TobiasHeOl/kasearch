@@ -3,9 +3,12 @@ from multiprocessing import cpu_count, Pool
 
 # This has to be set before jax is imported, but we should think of a better way to set it
 os.environ["XLA_FLAGS"]= f"--xla_force_host_platform_device_count={cpu_count()-2}" 
+os.environ["JAX_PLATFORMS"]='cpu'
 
 import jax
 import jax.numpy as jnp
+jax.config.update("jax_platforms", "cpu")
+jax.config.update('jax_platform_name', 'cpu') # This will be deprecated 
 
 
 from functools import partial
