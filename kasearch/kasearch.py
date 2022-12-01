@@ -31,7 +31,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
     """
     
     def __init__(self, 
-                 database_path='oasdb-small', 
+                 database_path='oasdb-tiny', 
                  allowed_chain='Any', 
                  allowed_species='Any',
                  regions=['whole', 'cdrs', 'cdr3'],
