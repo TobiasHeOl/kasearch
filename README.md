@@ -46,7 +46,11 @@ or directly from github.
 ~~~
 
 
-**NB:** You need to manually install a version of [ANARCI](https://github.com/oxpig/ANARCI) in the same environment.
+**NB:** You need to manually install a version of [ANARCI](https://github.com/oxpig/ANARCI) in the same environment. ANARCI can also be installed using bioconda, however, this version is maintained by a third party.
+
+~~~.sh
+    conda install -c bioconda anarci
+~~~
 
 ----------
 
@@ -57,7 +61,8 @@ This list contains the download links for the paper version of the pre-aligned O
 **NB**: The following datasets are large, you should therefore ensure you have enough space before trying to download them.
 
 - [OAS-aligned](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/paper_aligned_oas_sep2022.tar) (Paper version), a pre-aligned version of OAS, from September 2022, with 2.4 billion sequences taking up **~63GB**. 
-- [OAS-aligned-small](https://zenodo.org/record/7079547/files/oasdb_small.tar) (Paper version), a pre-aligned version of OAS, from September 2022, with 144 million sequences taking up **~4.4GB**. 
+- [OAS-aligned-small](https://zenodo.org/record/7384311/files/oasdb_small.tar) (Paper version), a pre-aligned version of OAS, from September 2022, with 144 million sequences taking up **~4.4GB**. 
+- [OAS-aligned-tiny](https://zenodo.org/record/7384311/files/oas-aligned-tiny.tar) (Paper version), a pre-aligned version of OAS, from September 2022, with 16 million sequences taking up **~400MB**. 
 
 
 After downloading, extract the pre-aligned dataset with "tar -xf downloaded_file.tar". Give the extacted dataset path when initiating KA-Search to search against it. See how to do this by following the KA-Search notebook guide below.

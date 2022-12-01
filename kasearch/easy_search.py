@@ -3,7 +3,7 @@ from kasearch import AlignSequences, SearchDB
 
 def EasySearch(query, 
                keep_best_n=10,
-               database_path='oasdb-small', 
+               database_path='oasdb-tiny', 
                allowed_chain='Any', 
                allowed_species='Any',
                regions=['whole'],
