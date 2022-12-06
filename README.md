@@ -72,9 +72,13 @@ After downloading, extract the pre-aligned dataset with "tar -xf downloaded_file
 
 # KA-Search guide
 
-**A Jupyter notebook** showcasing KA-Search can be found [here](https://github.com/oxpig/kasearch/blob/main/notebooks/examples.ipynb). 
+KA-Search is designed to be downloaded and run locally. As a demo, we have set up a reduced version of KA-Search on a [Colab notebook](https://colab.research.google.com/github/TobiasHeOl/kasearch/blob/main/notebooks/KAsearch_colab.ipynb) that can be run remotely. KA-Search, as setup on the Colab, uses the OAS-aligned-tiny version of OAS to reduce the time and memory required to download the database. The Colab demo is composed of two parts:
 
-KA-Search can also be run using the following [Colab](https://colab.research.google.com/github/TobiasHeOl/kasearch/blob/main/notebooks/KAsearch_colab.ipynb).
+- **Quick and easy use of KA-Search**: Here we allow the user to try out KA-Search with minimal configuration, simply paste your antibody variable domain sequence in and try it out!!
+
+- **KA-Search with more configuration**: Here we expose the KA-Search API and go through a more in depth tutorial of how it can be set up for your particular usecase. We explain how we preprocess the query sequence, the possible search configurations, how we extract the metadata after finding the most identical sequences and how to preprocess your own database so it can be used with KA-Search.  
+
+If the user want to follow this tutorial locally, we also provide [a Jupyter notebook](https://github.com/oxpig/kasearch/blob/main/notebooks/examples.ipynb) showcasing KA-Search. The content of the Jupyter notebook is the same as what is in the "KA-Search with more configuration" section of the Colab. By running it locally you can also search against the whole of OAS-aligned. 
 
 ---------
 
