@@ -76,7 +76,7 @@ KA-Search is designed to be downloaded and run locally. As a demo, we have set u
 
 - **Quick and easy use of KA-Search**: Here we allow the user to try out KA-Search with minimal configuration, simply paste your antibody variable domain sequence in and try it out!!
 
-- **KA-Search with more configuration**: Here we expose the KA-Search API and go through a more in depth tutorial of how it can be set up for your particular usecase. We explain how we preprocess the query sequence, the possible search configurations, how we extract the metadata after finding the most identical sequences and how to preprocess your own database so it can be used with KA-Search.  
+- **KA-Search with more configuration**: Here we expose the KA-Search API and go through a more in depth tutorial of how it can be set up for your particular usecase. We explain how to preprocess the query sequence, the possible search configurations, how to extract the metadata after finding the most identical sequences and how to preprocess your own database so it can be used with KA-Search.  
 
 If the user want to follow this tutorial locally, we also provide [a Jupyter notebook](https://github.com/oxpig/kasearch/blob/main/notebooks/examples.ipynb) showcasing KA-Search. The content of the Jupyter notebook is the same as what is in the "KA-Search with more configuration" section of the Colab. By running it locally you can also search against the whole of OAS-aligned. 
 
