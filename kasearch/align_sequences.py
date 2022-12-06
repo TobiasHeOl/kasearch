@@ -38,9 +38,12 @@ class AlignSequences:
         
         try:
             numbered_sequence, _ = number(seq, allowed_species=self.allowed_species)
+        except Exception:
+            raise ValueError(f"Sequence can not be numbered by ANARCI. This may be not an antibody variable domain.\nSequence that breaks: {seq}")
+        try:
             return canonical_alignment(numbered_sequence)
         except Exception:
-            return self._unusual_sequence
+            raise ValueError(f"Sequence can not be aligned with the canonical alignment.\nSequence that breaks: {seq}")
         
     def _canonical_alignment_oas(self, seq):
         """Canonical alignment of OAS derived ANARCI numberings.
