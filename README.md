@@ -82,6 +82,71 @@ If the user want to follow this tutorial locally, we also provide [a Jupyter not
 
 ---------
 
+# Description of the returned results
+
+The returned output from KA-Search consists of the all columns and metadata in the pre-aligned datasets searched as well as a column named "Identity", that contains the calculated sequence identity. The returned output is always sorted by highest identity.
+
+For the OAS-aligned datasets these columns are;
+
+- Each column from AIRR's rearrangement schema ([see here for exact description](https://docs.airr-community.org/en/stable/datarep/rearrangements.html)).
+- Additional sequence specific information derived by OAS processing, i.e. nucleotides for the constant region if present, ANARCI numbering and ANARCI status. For more information see the [OAS paper](https://doi.org/10.1002/pro.4205).
+- Metadata from the OAS data unit the sequence was derived from, i.e. author, species, experimental run and unique sequences in run. For more information see the [OAS help page](http://opig.stats.ox.ac.uk/webapps/oas/documentation).
+- Lastly, the column "Identity", which contains the calculated sequence identity between the query and target sequence.
+
+**NB:** Some returned columns contain NaNs. This is because those columns could not be populated when the data was originally processed, and is not a side-effect of KA-Search. 
+
+---------
+
+# Description of the main arguments and examples of different types of search
+
+The main arguments for your search are;
+
+- **database_path**: Path to the database to search. If not specified, the OAS-aligned-tiny (~400MB of 16m human heavy chain sequences) dataset will be downloaded and searched against. 
+- **allowed_chain**: Which chain to search, either only heavy (Heavy), only light (Light) or any chain (Any)
+- **allowed_species** Which species to search against (this depends on what species are in the used pre-aligned data). For OAS-aligned this includes, Human, Mouse, Camel and Humanized. 
+- **regions**: Which specific region to search against. A list of regions to search, either the provided ones ('whole', 'cdrs' or 'cdr3'), or user-defined ones. An example of a user-defined one is \['111 ', '111A', '112A', '112 '\].
+- **length_matched**: A list of false and true for whether to only compare sequences where the length of the region to search match. Example: [False, True, True]
+
+**NB**: The length of regions list and length_matched list needs to be the same.
+
+
+### 1. Example searching for whole region human sequences
+
+In this example, we search for similar human heavy chains across the whole variable region, while also trying to find sequences which might differ in length.
+
+~~~python
+
+raw_queries = [
+    'VKLLEQSGAEVKKPGASVKVSCKASGYSFTSYGLHWVRQAPGQRLEWMGWISAGTGNTKYSQKFRGRVTFTRDTSATTAYMGLSSLRPEDTAVYYCARDPYGGGKSEFDYWGQGTLVTVSS',
+]
+
+results = EasySearch(raw_queries, 
+               allowed_chain='Heavy',           
+               allowed_species='Human',   
+               regions=['whole'],          
+               length_matched=[False], 
+              )
+~~~
+
+### 2. Example searching for the CDRH3 of any species, but only with exact CDRH3 length match.
+
+In this example, we search for exact length CDRH3s from any species. If one is interested in finding sequences with CDR3 lengths that differ in length, the length_match argument should be set to False.
+
+~~~python
+
+raw_queries = [
+    'VKLLEQSGAEVKKPGASVKVSCKASGYSFTSYGLHWVRQAPGQRLEWMGWISAGTGNTKYSQKFRGRVTFTRDTSATTAYMGLSSLRPEDTAVYYCARDPYGGGKSEFDYWGQGTLVTVSS',
+]
+
+results = EasySearch(raw_queries, 
+               allowed_chain='Heavy',           
+               allowed_species='Any',   
+               regions=['cdr3'],          
+               length_matched=[True], 
+              )
+~~~
+
+---------
 
 
 ### Citation
