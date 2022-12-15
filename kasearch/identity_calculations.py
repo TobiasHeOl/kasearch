@@ -60,7 +60,7 @@ def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, len
     abs1 = chunk(jax.lax.stop_gradient(array_of_abs1), jax.device_count())
     abs2 = jax.lax.stop_gradient(array_of_abs2)
 
-    identities = np.asarray(calculate_many_sequence_identities(abs1, abs2, masks, length_matched))
+    identities = np.array(calculate_many_sequence_identities(abs1, abs2, masks, length_matched))
     
     return identities.reshape(-1, array_of_abs2.shape[0], len(region_masks))[:array_of_abs1.shape[0]]   
 
