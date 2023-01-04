@@ -17,6 +17,7 @@ from kasearch.canonical_alignment import all_cdrs_mask, cdr3_mask, reg_def
 
 default_region_masks = np.stack([np.ones(200, dtype = np.uint8), all_cdrs_mask, cdr3_mask])
 default_length_matched = np.array([False,True,True], dtype = bool)
+default_include_indels = np.array([False,False,False], dtype = bool)
 
 
 @partial(jax.jit, static_argnums=1)
@@ -31,11 +32,12 @@ def chunk(array, chunks):
 
 
 @jax.jit
-def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched):
+def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched, include_indels):
     comparison = abs1 == abs2
 
     mask1, mask2 = abs1 != 0, abs2 != 0
-    overlapping_residues = comparison * mask1 * mask2
+    mask1, mask2 = mask1 | (include_indels * mask2), mask2 | (include_indels * mask1)
+    overlapping_residues = comparison * mask1
 
     len1, len2 = mask1 @ masks, mask2 @ masks
     region_overlap = overlapping_residues @ masks
@@ -44,34 +46,37 @@ def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched):
 
 
 @jax.jit
-def _calculate_chunked_sequence_identity(abs1, abs2, masks, length_matched):
+def _calculate_chunked_sequence_identity(abs1, abs2, masks, length_matched, include_indels):
     
-    outs = [_calculate_single_sequence_identity(abs1, ab2, masks, length_matched) for ab2 in abs2]
+    outs = [_calculate_single_sequence_identity(abs1, ab2, masks, length_matched, include_indels) for ab2 in abs2]
     
     return jax.lax.transpose(jnp.stack(outs, axis = 2),(0,2,1))
 
 
-calculate_many_sequence_identities = jax.pmap(_calculate_chunked_sequence_identity, in_axes=(0,None,None,None))
+calculate_many_sequence_identities = jax.pmap(_calculate_chunked_sequence_identity, in_axes=(0,None,None,None,None))
 
 
-def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched):
-    masks, length_matched = jnp.array(region_masks.T), jnp.array(length_matched)
+def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched, include_indels):
+    masks, length_matched, include_indels = jnp.array(region_masks.T), jnp.array(length_matched), jnp.array(include_indels)
     
     abs1 = chunk(jax.lax.stop_gradient(array_of_abs1), jax.device_count())
     abs2 = jax.lax.stop_gradient(array_of_abs2)
 
-    identities = np.array(calculate_many_sequence_identities(abs1, abs2, masks, length_matched))
+    identities = np.array(calculate_many_sequence_identities(abs1, abs2, masks, length_matched, include_indels))
     
     return identities.reshape(-1, array_of_abs2.shape[0], len(region_masks))[:array_of_abs1.shape[0]]   
 
 
-def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
-                                    region_masks=default_region_masks, 
-                                    length_matched=default_length_matched):
+def get_n_most_identical_multiquery(
+    query, targets, target_ids, n=10,
+    region_masks=default_region_masks,
+    length_matched=default_length_matched,
+    include_indels=default_include_indels,
+):
     
     n = len(targets)-1 if len(targets) < n else n # Adjusts for large n's
     
-    seq_identity_matrix = calculate_seq_ids_multiquery(targets, query, region_masks, length_matched)
+    seq_identity_matrix = calculate_seq_ids_multiquery(targets, query, region_masks, length_matched, include_indels)
     seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
 
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id

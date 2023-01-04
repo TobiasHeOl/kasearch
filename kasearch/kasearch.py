@@ -30,19 +30,24 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         Retrieve meta data for n_query spanning n_region and returning n_sequences
     """
     
-    def __init__(self, 
-                 database_path='oasdb-tiny', 
-                 allowed_chain='Any', 
-                 allowed_species='Any',
-                 regions=['whole', 'cdrs', 'cdr3'],
-                 length_matched=[False,True,True],
-                ):
+    def __init__(
+        self, 
+        database_path='oasdb-tiny', 
+        allowed_chain='Any', 
+        allowed_species='Any',
+        regions=['whole', 'cdrs', 'cdr3'],
+        length_matched=[False,True,True],
+        include_indels=[False,False,False],
+    ):
         super().__init__()
         
         self.region_masks = np.stack([get_region_mask(region) for region in regions])
         self.length_matched = np.array(length_matched, dtype = bool)
+        self.include_indels = np.array(include_indels, dtype = bool)
         assert self.region_masks.shape[0] == self.length_matched.shape[0], "List of user-defined regions ({}) and 'if length match' ({})\
  are of different lengths. Please define a 'if length match' for each defined region.".format(self.region_masks.shape[0], self.length_matched.shape[0])
+        assert self.region_masks.shape[0] == self.include_indels.shape[0], "List of user-defined regions ({}) and 'if include indels' ({})\
+ are of different lengths. Please define a 'if include indels' for each defined region.".format(self.region_masks.shape[0], self.include_indels.shape[0])
         
         self._set_database_path(database_path)
         self._set_files_to_search(allowed_chain, allowed_species)
@@ -64,14 +69,15 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         Update the current most similar sequences.
         """
         
-        chunk_best_identities, chunk_best_ids = get_n_most_identical_multiquery(query,
-                                                                                _current_target_numbering,
-                                                                                _current_target_ids, 
-                                                                                n=keep_best_n,
-                                                                                region_masks=self.region_masks, 
-                                                                                length_matched=self.length_matched
-                                                                               )
-        
+        chunk_best_identities, chunk_best_ids = get_n_most_identical_multiquery(
+            query,
+            _current_target_numbering,
+            _current_target_ids, 
+            n=keep_best_n,
+            region_masks=self.region_masks, 
+            length_matched=self.length_matched,
+            include_indels=self.include_indels,
+        )
         
         all_identities = np.concatenate([chunk_best_identities, self.current_best_identities], axis=1)
         all_ids = np.concatenate([chunk_best_ids, self.current_best_ids], axis=1)
