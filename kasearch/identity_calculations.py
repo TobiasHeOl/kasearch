@@ -17,7 +17,7 @@ from kasearch.canonical_alignment import all_cdrs_mask, cdr3_mask, reg_def
 
 default_region_masks = np.stack([np.ones(200, dtype = np.uint8), all_cdrs_mask, cdr3_mask])
 default_length_matched = np.array([False,True,True], dtype = bool)
-default_include_indels = np.array([False,False,False], dtype = bool)
+default_include_indels = np.array([False], dtype = bool)
 
 
 @partial(jax.jit, static_argnums=1)

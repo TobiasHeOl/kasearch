@@ -37,7 +37,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         allowed_species='Any',
         regions=['whole', 'cdrs', 'cdr3'],
         length_matched=[False,True,True],
-        include_indels=[False,False,False],
+        include_indels=[False],
     ):
         super().__init__()
         

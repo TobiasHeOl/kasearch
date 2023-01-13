@@ -10,10 +10,10 @@ class AlignSequences:
     Canonical alignment of sequences for KA-Search.  
     """
     
-    def __init__(self, allowed_species=['Human', 'Mouse'], n_jobs=1, oas_source=False, if_fast=False):
+    def __init__(self, allowed_species=['Human', 'Mouse'], n_jobs=1, from_oas=False, fast_implementation=False):
         
-        self._oas_source = oas_source
-        self._if_fast = if_fast
+        self._from_oas = from_oas
+        self._fast_implementation= fast_implementation
         self.n_jobs = n_jobs
         self._unusual_sequence = np.zeros(canonical_numbering_len, np.int8)
         
@@ -45,32 +45,13 @@ class AlignSequences:
         except Exception:
             raise ValueError(f"Sequence can not be aligned with the canonical alignment.\nSequence that breaks: {seq}")
         
-    def _canonical_alignment_oas(self, seq):
-        """Canonical alignment of OAS derived ANARCI numberings.
-        
-        Parameters
-        ----------
-        seq : dict
-            OAS derived ANARCI numberings
-
-        Returns
-        -------
-        numpy array
-            Canonical alignment of a single sequence
-        """
-        
-        try:
-            return canonical_alignment_oas(seq)
-        except Exception:
-            return self._unusual_sequence
-        
-    def _fast_canonical_alignment(self, numbered_seq):
+    def _canonical_alignment_post_anarci(self, numbered_seq, from_oas=False):
         """Canonical alignment of ANARCI numberings.
         
         Parameters
         ----------
         seq : dict
-            Nested ANARCI numberings
+            Either OAS derived ANARCI numberings or nested ANARCI numberings
 
         Returns
         -------
@@ -78,10 +59,17 @@ class AlignSequences:
             Canonical alignment of a single sequence
         """
         
-        try:
-            return canonical_alignment(numbered_seq[0][0])
-        except Exception:
-            return self._unusual_sequence
+        if from_oas:
+            try:
+                return canonical_alignment_oas(numbered_seq)
+            except Exception:
+                return self._unusual_sequence
+        
+        else:
+            try:
+                return canonical_alignment(numbered_seq[0][0])
+            except Exception:
+                return self._unusual_sequence
             
     def _many_canonical_alignment(self, seqs):
         """Canonical alignment of many sequences.
@@ -97,10 +85,10 @@ class AlignSequences:
             Canonical alignments of many sequences
         """
         
-        if self._oas_source:
-            return np.array([self._canonical_alignment_oas(seq) for seq in seqs])
+        if self._from_oas:
+            return np.array([self._canonical_alignment_post_anarci(numbered_seq, from_oas=True) for numbered_seq in seqs])
         
-        elif self._if_fast:
+        elif self._fast_implementation:
             numbered_seqs = many_number(seqs, allowed_species=self.allowed_species, n_jobs=self.n_jobs)
             assert numbered_seqs, "Target DB contains sequences breaking ANARCI."
             
@@ -108,7 +96,7 @@ class AlignSequences:
             chunksize=len(numbered_seqs) // n_jobs
 
             with Pool(processes=n_jobs) as pool:
-                return np.array(pool.map(self._fast_canonical_alignment, numbered_seqs, chunksize=chunksize))
+                return np.array(pool.map(self._canonical_alignment_post_anarci, numbered_seqs, chunksize=chunksize))
         
         else:
             n_jobs = len(seqs) if len(seqs) <  self.n_jobs else self.n_jobs

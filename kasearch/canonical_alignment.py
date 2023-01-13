@@ -96,23 +96,32 @@ def canonical_alignment(anarci_output):
     ----------
     anarci_output : dict
         ANARCI numbering of a sequence
-
+    
     Returns
     -------
     numpy array
         Canonical alignment of a sequence
     """
-
-    sequence = np.zeros(canonical_numbering_len, np.int8)
+    
+    first_res, last_res = False, False
+    sequence = np.zeros(canonical_numbering_len, np.int8)     
 
     for res in anarci_output:
         num, seq = res
         num = ''.join([str(i) for i in num])
+        
+        if seq != '-': 
+            if not first_res: first_res = num
+            
+            last_res = num
 
         i = canonical_numbering_to_index[num]
-        sequence[i] = int.from_bytes(seq.encode(), 'big')
-
+        sequence[i] = int.from_bytes(seq.encode(), 'big') 
+        
     sequence[(sequence == 45)] = 0
+    sequence[:canonical_numbering_to_index[first_res]] = 124
+    sequence[canonical_numbering_to_index[last_res] + 1:] = 124
+    
     return sequence
 
 
@@ -131,12 +140,21 @@ def canonical_alignment_oas(anarci_output):
         Canonical alignment of a sequence
     """
     
+    first_res, last_res = False, False
     sequence = np.zeros(canonical_numbering_len, np.int8)
 
     for res in oas_numbering_finder.findall(anarci_output):
         num, seq = res[:-5], res[-1]
+        
+        if seq != '-': 
+            if not first_res: first_res = num
+
+            last_res = num
+        
         i = canonical_numbering_to_index[num]
         sequence[i] = int.from_bytes(seq.encode(), 'big')
 
     sequence[(sequence == 45)] = 0
+    sequence[:canonical_numbering_to_index[first_res]] = 124
+    sequence[canonical_numbering_to_index[last_res] + 1:] = 124
     return sequence
