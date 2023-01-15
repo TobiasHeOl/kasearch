@@ -32,17 +32,41 @@ def chunk(array, chunks):
 
 
 @jax.jit
-def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched, include_indels):
+def _calculate_single_sequence_identity_average(abs1, abs2, masks, length_matched):
     comparison = abs1 == abs2
 
-    mask1, mask2 = abs1 != 0, abs2 != 0
-    mask1, mask2 = mask1 | (include_indels * mask2), mask2 | (include_indels * mask1)
-    overlapping_residues = comparison * mask1
+    mask1, mask2 = (abs1 != 0) & (abs1 != 124), (abs2 != 0) & (abs1 != 124)
+    overlapping_residues = comparison * mask1 * mask2
 
     len1, len2 = mask1 @ masks, mask2 @ masks
     region_overlap = overlapping_residues @ masks
     identities = ((region_overlap / len1) + (region_overlap / len2)) * (~length_matched | (len1==len2)) / 2
     return identities
+
+
+@jax.jit
+def _calculate_single_sequence_identity_indel(abs1, abs2, masks, length_matched):
+    comparison = abs1 == abs2
+
+    mask1, mask2 = abs1 != 0, abs2 != 0
+    not_missing1, not_missing2 = abs1 != 124, abs2 != 124
+    exists1, exists2 = mask1 * not_missing1, mask2 * not_missing2
+    
+    overlapping_residues = comparison * exists1 * exists2
+
+    length = (mask1 | mask2) * (not_missing1 * not_missing2) @ masks
+    region_overlap = overlapping_residues @ masks
+    identities = (region_overlap / length) * (~length_matched | ((exists1 @ masks) == (exists2 @ masks)))
+    return identities
+
+
+@jax.jit
+def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched, include_indels):
+    out = jax.lax.cond(
+        include_indels, _calculate_single_sequence_identity_indel,
+        _calculate_single_sequence_identity_average, abs1, abs2,
+        masks, length_matched)
+    return out
 
 
 @jax.jit
