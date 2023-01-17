@@ -8,8 +8,9 @@ def EasySearch(query,
                allowed_species='Any',
                regions=['whole'],
                length_matched=[False],
-               n_jobs=1,
+               include_indels=False,
                local_oas_path = None,
+               n_jobs=1,
               ):
     """Quick KA-Search wrapper to run of a single query across a single region. 
 
@@ -46,6 +47,7 @@ def EasySearch(query,
         allowed_species = allowed_species, 
         regions = regions, 
         length_matched = length_matched,
+        include_indels = include_indels,
         local_oas_path = local_oas_path,
     )
     
