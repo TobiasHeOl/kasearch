@@ -8,10 +8,11 @@ import numpy as np
 
 
 class ExtractMetadata:
-    def __init__(self, id_to_study_file=None):
-        pass
+    def __init__(self, database_path=None, local_oas_path=None):
+        
+        self._set_id_to_study(database_path, local_oas_path)
     
-    def _set_id_to_study(self, database_path):
+    def _set_id_to_study(self, database_path, local_oas_path=None):
         """
         Sets id_to_study file.
         """
@@ -20,6 +21,11 @@ class ExtractMetadata:
         
         with open(os.path.join(database_path, "id_to_study.txt"), "r") as handle:
             self.id_to_study = ast.literal_eval(handle.readlines()[0])
+            
+        if local_oas_path:
+            for key, val in self.id_to_study.items(): 
+                self.id_to_study[key] = val.replace('http://opig.stats.ox.ac.uk/webapps/ngsdb/unpaired/', local_oas_path)
+            
             
     def __group_ids_by_study(self, idxs):
         """

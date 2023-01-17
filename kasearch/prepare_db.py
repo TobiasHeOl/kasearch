@@ -54,13 +54,15 @@ class TemporaryDataHolder:
         save_folder = os.path.join(self.db_path, chain, species)
         os.makedirs(save_folder, exist_ok=True)    
         
-        np.savez_compressed(file = os.path.join(save_folder, f"data-subset-normal-{uuid.uuid4()}.npz"), 
-                            numberings = np.concatenate(self.sequences[chain][species]), 
-                            idxs = np.concatenate(self.sequences_idxs[chain][species]))
+        if self.sequences[chain][species] != []:
+            np.savez_compressed(file = os.path.join(save_folder, f"data-subset-normal-{uuid.uuid4()}.npz"), 
+                                numberings = np.concatenate(self.sequences[chain][species]), 
+                                idxs = np.concatenate(self.sequences_idxs[chain][species]))
         
-        np.savez_compressed(file = os.path.join(save_folder, f"data-subset-unusual-{uuid.uuid4()}.npz"), 
-                            numberings = np.concatenate(self.unusual_sequences[chain][species]), 
-                            idxs = np.concatenate(self.unusual_sequences_idxs[chain][species]))
+        if self.unusual_sequences[chain][species] != []:
+            np.savez_compressed(file = os.path.join(save_folder, f"data-subset-unusual-{uuid.uuid4()}.npz"), 
+                                numberings = np.concatenate(self.unusual_sequences[chain][species]), 
+                                idxs = np.concatenate(self.unusual_sequences_idxs[chain][species]))
         
         self.set_empty_nested_dict(chain, species)
         

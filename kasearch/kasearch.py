@@ -37,7 +37,8 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         allowed_species='Any',
         regions=['whole', 'cdrs', 'cdr3'],
         length_matched=[False,True,True],
-        include_indels=[False],
+        include_indels=False,
+        local_oas_path = None,
     ):
         super().__init__()
         
@@ -46,13 +47,11 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         self.include_indels = np.array(include_indels, dtype = bool)
         assert self.region_masks.shape[0] == self.length_matched.shape[0], "List of user-defined regions ({}) and 'if length match' ({})\
  are of different lengths. Please define a 'if length match' for each defined region.".format(self.region_masks.shape[0], self.length_matched.shape[0])
-        assert self.region_masks.shape[0] == self.include_indels.shape[0], "List of user-defined regions ({}) and 'if include indels' ({})\
- are of different lengths. Please define a 'if include indels' for each defined region.".format(self.region_masks.shape[0], self.include_indels.shape[0])
         
         self._set_database_path(database_path)
         self._set_files_to_search(allowed_chain, allowed_species)
         
-        self._set_id_to_study(self.database_path)
+        self._set_id_to_study(self.database_path, local_oas_path)
         
         assert len(self.files_to_search_normal) != 0, "DB does not contain data of {} chains from the {} species.".format(allowed_chain, allowed_species)
     
