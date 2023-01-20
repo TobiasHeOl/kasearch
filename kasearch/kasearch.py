@@ -9,6 +9,7 @@ from kasearch.meta_extract import ExtractMetadata
 from kasearch.initiate_db import InitiateDatabase
 from kasearch.canonical_alignment import get_region_mask
 
+
 class SearchDB(InitiateDatabase, ExtractMetadata):
     """
     The main class for searching and retrieving meta data with KA-Search. 
@@ -37,14 +38,14 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         allowed_species='Any',
         regions=['whole', 'cdrs', 'cdr3'],
         length_matched=[False,True,True],
-        include_indels=False,
+        include_ends=True,
         local_oas_path = None,
     ):
         super().__init__()
         
         self.region_masks = np.stack([get_region_mask(region) for region in regions])
         self.length_matched = np.array(length_matched, dtype = bool)
-        self.include_indels = np.array(include_indels, dtype = bool)
+        self.include_ends = include_ends
         assert self.region_masks.shape[0] == self.length_matched.shape[0], "List of user-defined regions ({}) and 'if length match' ({})\
  are of different lengths. Please define a 'if length match' for each defined region.".format(self.region_masks.shape[0], self.length_matched.shape[0])
         
@@ -75,7 +76,7 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
             n=keep_best_n,
             region_masks=self.region_masks, 
             length_matched=self.length_matched,
-            include_indels=self.include_indels,
+            include_ends=self.include_ends,
         )
         
         all_identities = np.concatenate([chunk_best_identities, self.current_best_identities], axis=1)

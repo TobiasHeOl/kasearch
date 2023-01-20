@@ -8,7 +8,7 @@ def EasySearch(query,
                allowed_species='Any',
                regions=['whole'],
                length_matched=[False],
-               include_indels=False,
+               include_ends=True,
                local_oas_path = None,
                n_jobs=1,
               ):
@@ -47,7 +47,7 @@ def EasySearch(query,
         allowed_species = allowed_species, 
         regions = regions, 
         length_matched = length_matched,
-        include_indels = include_indels,
+        include_ends = include_ends,
         local_oas_path = local_oas_path,
     )
     
