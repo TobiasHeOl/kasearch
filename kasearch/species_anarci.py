@@ -34,11 +34,11 @@ def number_many_at_once(sequences, scheme="imgt", database="ALL", allow=set(["H"
     number_chunk = partial(_number_chunk, scheme=scheme, database=database, allow=allow, allowed_species=allowed_species, strict=strict, **kwargs)
 
     if ncpu==1:
-        numbered_chunks = sum([number_chunk(sequences[i:i+chunk_size]) for i in range(0, len(sequences), chunk_size)], [])
+        numbered = sum([number_chunk(sequences[i:i+chunk_size]) for i in range(0, len(sequences), chunk_size)], [])
     else:
         with Pool(ncpu) as pool:
-            numbered_chunks = pool.map(number_chunk, [sequences[i:i+chunk_size] for i in range(0, len(sequences), chunk_size)], chunksize=1)
+            numbered = pool.map(number_chunk, [sequences[i:i+chunk_size] for i in range(0, len(sequences), chunk_size)], chunksize=1)
     
-    return numbered_chunks
+    return numbered
             
     
