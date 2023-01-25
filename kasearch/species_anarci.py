@@ -3,9 +3,6 @@ from multiprocessing import Pool
 from functools import partial
 
 def _number_chunk(sequences, scheme="imgt", database="ALL", allow=set(["H","K","L"]), allowed_species=['human','mouse'], strict = True, **kwargs):
-    if len(sequences[0]) == 1:
-        return "POTATO"
-
     try:
         numbered, _, _ = anarci(list(enumerate(sequences)), scheme=scheme, database=database, allow=allow, allowed_species=allowed_species, **kwargs)
         numbered  = [x[0][0] if x else None for x in numbered]
