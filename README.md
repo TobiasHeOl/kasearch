@@ -33,20 +33,22 @@ We introduce Known Antibody Search (KA-Search), a tool that allows for rapid sea
 
 # Software implementation
 
-KA-Search is freely available and can be installed with pip.
+KA-Search is freely available python package.
+
+The latest stable version can be installed with pip.
 
 ~~~.sh
     pip install kasearch
 ~~~
 
-or directly from github.
+and the latest updated version directly from github.
 
 ~~~.sh
     pip install -U git+https://github.com/oxpig/kasearch
 ~~~
 
 
-**NB:** You need to manually install a version of [ANARCI](https://github.com/oxpig/ANARCI) in the same environment. ANARCI can also be installed using bioconda, however, this version is maintained by a third party.
+**NB:** You need to manually install a version of [ANARCI](https://github.com/oxpig/ANARCI) in the same environment. ANARCI can also be installed using bioconda; however, this version is maintained by a third party.
 
 ~~~.sh
     conda install -c bioconda anarci
@@ -56,14 +58,16 @@ or directly from github.
 
 # Download pre-aligned data to search against
 
-This list contains the download links for the paper version of the pre-aligned OAS and any future releases, ready for KA-Search. 
+The following list contains the download links for the paper version of the pre-aligned OAS and any future releases, ready for KA-Search. 
 
-**NB**: The following datasets are large, you should therefore ensure you have enough space before trying to download them.
+**NB**: Some of the datasets are quite large, you should therefore ensure you have enough space before trying to download them.\
+**NB**: For convenience, OAS-aligned-small and OAS-aligned-tiny can be downloaded automatically when initiating KA-Search.
 
-- [OAS-aligned](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/paper_aligned_oas_sep2022.tar) (Paper version), a pre-aligned version of OAS, from September 2022, with 2.4 billion sequences taking up **~63GB**. 
-- [OAS-aligned-small](https://zenodo.org/record/7384311/files/oasdb_small.tar) (Paper version), a pre-aligned version of OAS, from September 2022, with 144 million sequences taking up **~4.4GB**. 
-- [OAS-aligned-tiny](https://zenodo.org/record/7384311/files/oas-aligned-tiny.tar) (Paper version), a pre-aligned version of OAS, from September 2022, with 16 million sequences taking up **~400MB**. 
-
+| Dataset                                                                                                                    | Size  | Date           | Comments                                                |
+|----------------------------------------------------------------------------------------------------------------------------|-------|----------------|---------------------------------------------------------|
+| [OAS-aligned](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/OAS-aligned-paper-version-20230111.tar) (Paper version) | 63GB  | January 2023 | A pre-aligned version of OAS with 2.4 billion sequences |
+| [OAS-aligned-small](https://zenodo.org/record/7562025/files/OAS-aligned-small.tar) (Paper version)                               | 2.8GB | January 2023 | A pre-aligned version of OAS with 86 million sequences |
+| [OAS-aligned-tiny](https://zenodo.org/record/7562025/files/OAS-aligned-tiny.tar) (Paper version)                           | 260MB | January 2023 | A pre-aligned version of OAS with 10 million sequences  |
 
 After downloading, extract the pre-aligned dataset with "tar -xf downloaded_file.tar". Give the extacted dataset path when initiating KA-Search to search against it. See how to do this by following the KA-Search notebook guide below.
 
@@ -72,7 +76,11 @@ After downloading, extract the pre-aligned dataset with "tar -xf downloaded_file
 
 # KA-Search guide
 
-KA-Search is designed to be downloaded and run locally. As a demo, we have set up a reduced version of KA-Search on a [Colab notebook](https://colab.research.google.com/github/TobiasHeOl/kasearch/blob/main/notebooks/KAsearch_colab.ipynb) that can be run remotely. KA-Search, as setup on the Colab, uses the OAS-aligned-tiny version of OAS to reduce the time and memory required to download the database. The Colab demo is composed of two parts:
+KA-Search is designed to be downloaded and run locally. 
+
+**NB**: Out of the box, KA-Search requires an internet connection to retrieve meta data; see below for how to use KA-Search offline.
+
+As a demo, we have set up a reduced version of KA-Search on a [Colab notebook](https://colab.research.google.com/github/TobiasHeOl/kasearch/blob/main/notebooks/KAsearch_colab.ipynb) that can be run remotely. KA-Search, as setup on the Colab, uses the OAS-aligned-tiny version of OAS to reduce the time and memory required to download the database. The Colab demo is composed of two parts:
 
 - **Quick and easy use of KA-Search**: Here we allow the user to try out KA-Search with minimal configuration, simply paste your antibody variable domain sequence in and try it out!!
 
@@ -84,7 +92,7 @@ If the user want to follow this tutorial locally, we also provide [a Jupyter not
 
 # Description of the returned results
 
-The returned output from KA-Search consists of the all columns and metadata in the pre-aligned datasets searched as well as a column named "Identity", that contains the calculated sequence identity. The returned output is always sorted by highest identity.
+The returned output from KA-Search contains all columns and metadata in the pre-aligned datasets searched as well as a column named "Identity", which contains the calculated sequence identity. The returned output is always sorted by highest identity.
 
 For the OAS-aligned datasets these columns are;
 
@@ -93,7 +101,7 @@ For the OAS-aligned datasets these columns are;
 - Metadata from the OAS data unit the sequence was derived from, i.e. author, species, experimental run and unique sequences in run. For more information see the [OAS help page](http://opig.stats.ox.ac.uk/webapps/oas/documentation).
 - Lastly, the column "Identity", which contains the calculated sequence identity between the query and target sequence.
 
-**NB:** Some returned columns contain NaNs. This is because those columns could not be populated when the data was originally processed, and is not a side-effect of KA-Search. 
+**NB:** Some returned columns contain NaNs. These columns could not be populated when the data was originally processed, and it is therefore not a side-effect of KA-Search. The only column populated by KA-Search, is the "Identity" column.
 
 ---------
 
@@ -101,18 +109,20 @@ For the OAS-aligned datasets these columns are;
 
 The main arguments for your search are;
 
-- **database_path**: Path to the database to search. If not specified, the OAS-aligned-tiny (~400MB of 16m human heavy chain sequences) dataset will be downloaded and searched against. 
+- **database_path**: Path to the database to search. If not specified, the OAS-aligned-tiny (~260MB of 10m human heavy chain sequences) dataset will be downloaded and searched against. 
 - **allowed_chain**: Which chain to search, either only heavy (Heavy), only light (Light) or any chain (Any)
 - **allowed_species** Which species to search against (this depends on what species are in the used pre-aligned data). For OAS-aligned this includes, Human, Mouse, Camel and Humanized. 
 - **regions**: Which specific region to search against. A list of regions to search, either the provided ones ('whole', 'cdrs' or 'cdr3'), or user-defined ones. An example of a user-defined one is \['111 ', '111A', '112A', '112 '\].
 - **length_matched**: A list of false and true for whether to only compare sequences where the length of the region to search match. Example: [False, True, True]
+- **local_oas_path**: For offline use, the path to a local version of OAS. 
 
-**NB**: The length of regions list and length_matched list needs to be the same.
+**NB**: The length of regions list and length_matched list needs to be the same.\
+**NB**: For offline use, a local version of OAS is needed the the metadata extraction. OAS currently takes up ~1.1T. It is therefore recommended to run KA-Search locally, but with internet access.
 
 
-### 1. Example searching for whole region human sequences
+### 1. Example of searching against whole variable heavy domains from humans.
 
-In this example, we search for similar human heavy chains across the whole variable region, while also trying to find sequences which might differ in length.
+In this example, we search for similar human heavy chains across the whole variable domain, while also allowing sequences which might differ in length.
 
 ~~~python
 
@@ -120,17 +130,18 @@ raw_queries = [
     'VKLLEQSGAEVKKPGASVKVSCKASGYSFTSYGLHWVRQAPGQRLEWMGWISAGTGNTKYSQKFRGRVTFTRDTSATTAYMGLSSLRPEDTAVYYCARDPYGGGKSEFDYWGQGTLVTVSS',
 ]
 
-results = EasySearch(raw_queries, 
-               allowed_chain='Heavy',           
-               allowed_species='Human',   
-               regions=['whole'],          
-               length_matched=[False], 
-              )
+results = EasySearch(
+    raw_queries, 
+    allowed_chain='Heavy',  
+    allowed_species='Human', 
+    regions=['whole'],  
+    length_matched=[False], 
+)
 ~~~
 
-### 2. Example searching for the CDRH3 of any species, but only with exact CDRH3 length match.
+### 2. Example of searching for similar CDRH3s from any species, but only return CDRH3s with an exact length match.
 
-In this example, we search for exact length CDRH3s from any species. If one is interested in finding sequences with CDR3 lengths that differ in length, the length_match argument should be set to False.
+In this example, we search for sequences with an exact length CDRH3 from any species. If one is interested in finding sequences with CDR3 lengths that differ in length, the length_match argument should be set to False.
 
 ~~~python
 
@@ -138,15 +149,60 @@ raw_queries = [
     'VKLLEQSGAEVKKPGASVKVSCKASGYSFTSYGLHWVRQAPGQRLEWMGWISAGTGNTKYSQKFRGRVTFTRDTSATTAYMGLSSLRPEDTAVYYCARDPYGGGKSEFDYWGQGTLVTVSS',
 ]
 
-results = EasySearch(raw_queries, 
-               allowed_chain='Heavy',           
-               allowed_species='Any',   
-               regions=['cdr3'],          
-               length_matched=[True], 
-              )
+results = EasySearch(
+    raw_queries, 
+    allowed_chain='Heavy', 
+    allowed_species='Any', 
+    regions=['cdr3'],  
+    length_matched=[True], 
+)
+~~~
+
+
+### 3. Example of searching with a user-defined region (i.e. the paratope).
+
+In this example, we search for sequences with a similar paratope. The positions of the paratope needs to follow the IMGT numbering scheme and be one of the 200 allowed positions in the canonical alignment introduced in the KA-Search paper.
+
+~~~python
+
+raw_queries = [
+    'VKLLEQSGAEVKKPGASVKVSCKASGYSFTSYGLHWVRQAPGQRLEWMGWISAGTGNTKYSQKFRGRVTFTRDTSATTAYMGLSSLRPEDTAVYYCARDPYGGGKSEFDYWGQGTLVTVSS',
+]
+
+paratope = ["107 ", "108 ","111C", "114 ","115 "]
+
+results = EasySearch(
+    raw_queries, 
+    allowed_chain='Heavy',  
+    allowed_species='Any', 
+    regions=[paratope],   
+    length_matched=[True], 
+)
+~~~
+
+
+### 4. Example of searching with KA-Search offline.
+
+In this example, we specify the path to a local version of OAS. This allows us to extract metadata for the returned sequences offline.
+
+~~~python
+
+raw_queries = [
+    'VKLLEQSGAEVKKPGASVKVSCKASGYSFTSYGLHWVRQAPGQRLEWMGWISAGTGNTKYSQKFRGRVTFTRDTSATTAYMGLSSLRPEDTAVYYCARDPYGGGKSEFDYWGQGTLVTVSS',
+]
+
+results = EasySearch(
+    raw_queries, 
+    allowed_chain='Heavy',  
+    allowed_species='Any',
+    regions=['cdr3'],  
+    length_matched=[True], 
+    local_oas_path='/path/to/local/oas/'
+)
 ~~~
 
 ---------
+
 
 
 ### Citation

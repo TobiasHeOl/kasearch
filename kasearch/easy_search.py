@@ -8,6 +8,8 @@ def EasySearch(query,
                allowed_species='Any',
                regions=['whole'],
                length_matched=[False],
+               include_ends=True,
+               local_oas_path = None,
                n_jobs=1,
               ):
     """Quick KA-Search wrapper to run of a single query across a single region. 
@@ -39,12 +41,15 @@ def EasySearch(query,
     
     querydb = AlignSequences(n_jobs=n_jobs)(query)
     
-    targetdb = SearchDB(database_path=database_path,
-                    allowed_chain=allowed_chain, 
-                    allowed_species=allowed_species, 
-                    regions=regions, 
-                    length_matched=length_matched,
-                   )
+    targetdb = SearchDB(
+        database_path = database_path,
+        allowed_chain = allowed_chain, 
+        allowed_species = allowed_species, 
+        regions = regions, 
+        length_matched = length_matched,
+        include_ends = include_ends,
+        local_oas_path = local_oas_path,
+    )
     
     targetdb.search(querydb[:1], keep_best_n=keep_best_n)
 

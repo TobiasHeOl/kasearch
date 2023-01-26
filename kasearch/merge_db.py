@@ -30,8 +30,6 @@ def merge_subfolder(list_of_files, save_folder, data_file_size = 5_000_000, suff
     """
     numberings, idxs, seq_counts = [], [], 0
     
-    
-    
     for data, file_name in [(np.load(fname, allow_pickle=True), fname) for fname in list_of_files]:
         numberings.append(data['numberings'])
         idxs.append(data['idxs'])

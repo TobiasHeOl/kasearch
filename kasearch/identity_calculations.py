@@ -2,7 +2,7 @@ import os
 from multiprocessing import cpu_count, Pool
 
 # This has to be set before jax is imported, but we should think of a better way to set it
-os.environ["XLA_FLAGS"]= f"--xla_force_host_platform_device_count={cpu_count()-2}" 
+os.environ["XLA_FLAGS"]= f"--xla_force_host_platform_device_count={max(cpu_count()-2, 1)}" 
 os.environ["JAX_PLATFORMS"]='cpu'
 
 import jax
@@ -31,10 +31,10 @@ def chunk(array, chunks):
 
 
 @jax.jit
-def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched):
+def _calculate_single_sequence_identity_average(abs1, abs2, masks, length_matched):
     comparison = abs1 == abs2
 
-    mask1, mask2 = abs1 != 0, abs2 != 0
+    mask1, mask2 = (abs1 != 0) & (abs1 != 124), (abs2 != 0) & (abs1 != 124)
     overlapping_residues = comparison * mask1 * mask2
 
     len1, len2 = mask1 @ masks, mask2 @ masks
@@ -44,34 +44,75 @@ def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched):
 
 
 @jax.jit
-def _calculate_chunked_sequence_identity(abs1, abs2, masks, length_matched):
+def _calculate_single_sequence_identity_with_ends(abs1, abs2, masks, length_matched):
+    comparison = abs1 == abs2
+
+    mask1, mask2 = (abs1 != 0) & (abs1 != 124), (abs2 != 0) & (abs2 != 124)    
+    overlapping_residues = comparison * mask1 * mask2
+
+    length = (mask1 | mask2) @ masks
+    region_overlap = overlapping_residues @ masks
+    identities = (region_overlap / length) * (~length_matched | ((mask1 @ masks) == (mask2 @ masks)))
+    return identities
+
+
+@jax.jit
+def _calculate_single_sequence_identity_without_ends(abs1, abs2, masks, length_matched):
+    comparison = abs1 == abs2
+
+    mask1, mask2 = abs1 != 0, abs2 != 0
+    not_missing1, not_missing2 = abs1 != 124, abs2 != 124
+    exists1, exists2 = mask1 * not_missing1, mask2 * not_missing2
     
-    outs = [_calculate_single_sequence_identity(abs1, ab2, masks, length_matched) for ab2 in abs2]
+    overlapping_residues = comparison * exists1 * exists2
+
+    length = (mask1 | mask2) * (not_missing1 * not_missing2) @ masks
+    region_overlap = overlapping_residues @ masks
+    identities = (region_overlap / length) * (~length_matched | ((exists1 @ masks) == (exists2 @ masks)))
+    return identities
+
+
+@jax.jit
+def _calculate_single_sequence_identity(abs1, abs2, masks, length_matched, include_ends):
+    out = jax.lax.cond(
+        include_ends, _calculate_single_sequence_identity_with_ends,
+        _calculate_single_sequence_identity_without_ends, abs1, abs2,
+        masks, length_matched)
+    return out
+
+
+@jax.jit
+def _calculate_chunked_sequence_identity(abs1, abs2, masks, length_matched, include_ends):
+    
+    outs = [_calculate_single_sequence_identity(abs1, ab2, masks, length_matched, include_ends) for ab2 in abs2]
     
     return jax.lax.transpose(jnp.stack(outs, axis = 2),(0,2,1))
 
 
-calculate_many_sequence_identities = jax.pmap(_calculate_chunked_sequence_identity, in_axes=(0,None,None,None))
+calculate_many_sequence_identities = jax.pmap(_calculate_chunked_sequence_identity, in_axes=(0,None,None,None,None))
 
 
-def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched):
-    masks, length_matched = jnp.array(region_masks.T), jnp.array(length_matched)
+def calculate_seq_ids_multiquery(array_of_abs1, array_of_abs2, region_masks, length_matched, include_ends):
+    masks, length_matched, include_ends = jnp.array(region_masks.T), jnp.array(length_matched), jnp.array(include_ends)
     
     abs1 = chunk(jax.lax.stop_gradient(array_of_abs1), jax.device_count())
     abs2 = jax.lax.stop_gradient(array_of_abs2)
 
-    identities = np.array(calculate_many_sequence_identities(abs1, abs2, masks, length_matched))
+    identities = np.array(calculate_many_sequence_identities(abs1, abs2, masks, length_matched, include_ends))
     
     return identities.reshape(-1, array_of_abs2.shape[0], len(region_masks))[:array_of_abs1.shape[0]]   
 
 
-def get_n_most_identical_multiquery(query, targets, target_ids, n=10,
-                                    region_masks=default_region_masks, 
-                                    length_matched=default_length_matched):
+def get_n_most_identical_multiquery(
+    query, targets, target_ids, n=10,
+    region_masks=default_region_masks,
+    length_matched=default_length_matched,
+    include_ends=True,
+):
     
     n = len(targets)-1 if len(targets) < n else n # Adjusts for large n's
     
-    seq_identity_matrix = calculate_seq_ids_multiquery(targets, query, region_masks, length_matched)
+    seq_identity_matrix = calculate_seq_ids_multiquery(targets, query, region_masks, length_matched, include_ends)
     seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
 
     position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id

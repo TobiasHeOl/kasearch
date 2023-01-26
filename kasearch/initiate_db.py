@@ -49,8 +49,8 @@ def download_small_oas():
     os.makedirs(db_folder, exist_ok = True)
 
     if not glob.glob(os.path.join(db_folder, "oasdb_small*")):
-        print("Downloading a small version of OAS (4.4GB) ...")
-        url = "https://zenodo.org/record/7384311/files/oasdb_small.tar"
+        print("Downloading a small version of OAS (2.8GB) ...")
+        url = "https://zenodo.org/record/7562025/files/OAS-aligned-small.tar"
         tmp_file = os.path.join(db_folder, "tmp.tar")
 
         with open(tmp_file,'wb') as f: f.write(requests.get(url).content)
@@ -65,10 +65,10 @@ def download_tiny_oas():
     db_folder = os.path.join(os.path.dirname(__file__), "oasdb")
     os.makedirs(db_folder, exist_ok = True)
 
-    if not glob.glob(os.path.join(db_folder, "oas-aligned-tiny*")):
-        print("Downloading a tiny version of OAS (~400MB) ...")
+    if not glob.glob(os.path.join(db_folder, "oasdb_tiny*")):
+        print("Downloading a tiny version of OAS (260MB) ...")
 
-        url = "https://zenodo.org/record/7384311/files/oas-aligned-tiny.tar"
+        url = "https://zenodo.org/record/7562025/files/OAS-aligned-tiny.tar"
         tmp_file = os.path.join(db_folder, "tmp.tar")
 
         with open(tmp_file,'wb') as f: f.write(requests.get(url).content)
@@ -76,4 +76,4 @@ def download_tiny_oas():
         subprocess.run(["tar", "-xf", tmp_file, "-C", db_folder], check = True) 
         os.remove(tmp_file)
 
-    return glob.glob(os.path.join(db_folder, "oas-aligned-tiny*"))[0]
+    return glob.glob(os.path.join(db_folder, "oasdb_tiny*"))[0]
