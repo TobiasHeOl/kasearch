@@ -65,9 +65,9 @@ The following list contains the download links for the paper version of the pre-
 
 | Dataset                                                                                                                    | Size  | Date           | Comments                                                |
 |----------------------------------------------------------------------------------------------------------------------------|-------|----------------|---------------------------------------------------------|
-| [OAS-aligned](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/paper_aligned_oas_sep2022.tar) (Paper version) | 63GB  | September 2022 | A pre-aligned version of OAS with 2.4 billion sequences |
-| [OAS-aligned-small](https://zenodo.org/record/7384311/files/oasdb_small.tar) (Paper version)                               | 4.4GB | September 2022 | A pre-aligned version of OAS with 144 million sequences |
-| [OAS-aligned-tiny](https://zenodo.org/record/7384311/files/oas-aligned-tiny.tar) (Paper version)                           | 400MB | September 2022 | A pre-aligned version of OAS with 16 million sequences  |
+| [OAS-aligned](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/paper_aligned_oas_sep2022.tar) (Paper version) | 63GB  | January 2023 | A pre-aligned version of OAS with 2.4 billion sequences |
+| [OAS-aligned-small](https://zenodo.org/record/7562025/files/OAS-aligned-small.tar) (Paper version)                               | 2.8GB | January 2023 | A pre-aligned version of OAS with 86 million sequences |
+| [OAS-aligned-tiny](https://zenodo.org/record/7562025/files/OAS-aligned-tiny.tar) (Paper version)                           | 260MB | January 2023 | A pre-aligned version of OAS with 10 million sequences  |
 
 After downloading, extract the pre-aligned dataset with "tar -xf downloaded_file.tar". Give the extacted dataset path when initiating KA-Search to search against it. See how to do this by following the KA-Search notebook guide below.
 
