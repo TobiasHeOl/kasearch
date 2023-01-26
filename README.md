@@ -65,7 +65,7 @@ The following list contains the download links for the paper version of the pre-
 
 | Dataset                                                                                                                    | Size  | Date           | Comments                                                |
 |----------------------------------------------------------------------------------------------------------------------------|-------|----------------|---------------------------------------------------------|
-| [OAS-aligned](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/paper_aligned_oas_sep2022.tar) (Paper version) | 63GB  | January 2023 | A pre-aligned version of OAS with 2.4 billion sequences |
+| [OAS-aligned](http://opig.stats.ox.ac.uk/webapps/ngsdb/kasearch_aligned_oas/OAS-aligned-paper-version-20230111.tar) (Paper version) | 63GB  | January 2023 | A pre-aligned version of OAS with 2.4 billion sequences |
 | [OAS-aligned-small](https://zenodo.org/record/7562025/files/OAS-aligned-small.tar) (Paper version)                               | 2.8GB | January 2023 | A pre-aligned version of OAS with 86 million sequences |
 | [OAS-aligned-tiny](https://zenodo.org/record/7562025/files/OAS-aligned-tiny.tar) (Paper version)                           | 260MB | January 2023 | A pre-aligned version of OAS with 10 million sequences  |
 
@@ -109,7 +109,7 @@ For the OAS-aligned datasets these columns are;
 
 The main arguments for your search are;
 
-- **database_path**: Path to the database to search. If not specified, the OAS-aligned-tiny (~400MB of 16m human heavy chain sequences) dataset will be downloaded and searched against. 
+- **database_path**: Path to the database to search. If not specified, the OAS-aligned-tiny (~260MB of 10m human heavy chain sequences) dataset will be downloaded and searched against. 
 - **allowed_chain**: Which chain to search, either only heavy (Heavy), only light (Light) or any chain (Any)
 - **allowed_species** Which species to search against (this depends on what species are in the used pre-aligned data). For OAS-aligned this includes, Human, Mouse, Camel and Humanized. 
 - **regions**: Which specific region to search against. A list of regions to search, either the provided ones ('whole', 'cdrs' or 'cdr3'), or user-defined ones. An example of a user-defined one is \['111 ', '111A', '112A', '112 '\].

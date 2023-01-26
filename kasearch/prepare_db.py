@@ -89,9 +89,10 @@ class PrepareDB(TemporaryDataHolder):
         self, 
         sequence_file, 
         file_id, 
-        chain='Heavy', 
-        species='Any', 
+        chain = 'Heavy', 
+        species ='Any', 
         seq_column_name = 'sequence_alignment_aa',
+        strict = False,
         sequence_line_idx = None, 
         sequence_numberings = None,
     ):
@@ -115,7 +116,7 @@ class PrepareDB(TemporaryDataHolder):
             n_jobs=self.n_jobs, 
             allowed_species=anarci_species,
             from_oas=self.from_oas, 
-            fast_implementation=True
+            strict=strict
         )(sequences)
         
         if not sequence_line_idx: sequence_line_idx = range(len(sequences))
