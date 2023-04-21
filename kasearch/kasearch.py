@@ -68,12 +68,12 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         """
         Update the current most similar sequences.
         """
-        
+                
         chunk_best_identities, chunk_best_ids = get_n_most_identical_multiquery(
             query,
             _current_target_numbering,
             _current_target_ids, 
-            n=keep_best_n,
+            n=min(keep_best_n, _current_target_numbering.shape[0] - 1),
             region_masks=self.region_masks, 
             length_matched=self.length_matched,
             include_ends=self.include_ends,
@@ -106,7 +106,6 @@ class SearchDB(InitiateDatabase, ExtractMetadata):
         data_loader = DataLoader(self.files_to_search_normal[0])
         _current_target_numbering, _current_target_ids = data_loader.data['numberings'], data_loader.data['idxs']
         
-        keep_best_n = min(keep_best_n, _current_target_numbering.shape[0] - 1) # If trying to keep more than available targets, it breaks
         
         for file in self.files_to_search_normal[1:]:
             data_loader = DataLoader(file)
