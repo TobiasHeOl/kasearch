@@ -201,6 +201,74 @@ results = EasySearch(
 )
 ~~~
 
+
+### 5. Example of searching custom data.
+
+In this example, we pre-align a set of custom sequences, and subsequently search them with KA-Search. 
+
+
+First we format the data as an OAS data unit file. The minimal format requires an empty metadata and a single column with the variable domain of the antibody sequence, but can contain as many additional columns with sequence specific information as desired. This extra information will be retrieved when extracting metadata.
+~~~python
+
+import json, os, shutil
+import pandas as pd
+
+custom_data_file = "custom-data-examples.csv"
+
+seq_df = pd.DataFrame([
+    ["EVQLVESGGGLAKPGGSLRLHCAASGFAFSSYWMNWVRQAPGKRLEWVSAINLGGGLTYYAASVKGRFTISRDNSKNTLSLQMNSLRAEDTAVYYCATDYCSSTYCSPVGDYWGQGVLVTVSS"],
+    ["EVQLVQSGAEVKRPGESLKISCKTSGYSFTSYWISWVRQMPGKGLEWMGAIDPSDSDTRYNPSFQGQVTISADKSISTAYLQWSRLKASDTATYYCAIKKYCTGSGCRRWYFDLWGPGT"],
+    ['QVQLQQSGAELARPGASVKLSCKASGYTFTSYWMQWVKQRPGQGLEWIGAIYPGDGDTRYTQKFKGKATLTADKSSSTAYMQLSSLASEDSAVYYCARGEPRYDYAWFAYWGQGTLVTVS'],
+    ['QVQLQQSGAELARPGASVKLSCKASGYTFTSYWMQWVKQRPGQGLEWIGAIYPGDGDTRYTQKFKGKATLTADKSSSTAYMQLSSLASEDSAVYYCARGPATAWFAYWGQGTLVTVS'],
+    ['QVQLQQSGAELARPGASVKLSCKASGYTFTSYWMQWVKQRPGQGLEWIGAIYPGDGDTRYTQKFKGKATLTADKSSSTAYMQLSSLASEDSAVYYCARSAWFAYWGQGTLVTVS'],
+    ['QVQLQQSGAELARPGASVKLSCKASGYTFTSYWMQWVKQRPGQGLEWIGAIYPGDGDTRYTQKFKGKATLTADKSSSTAYMQLSSLASEDSAVYYCARGGYWGQGTTLTVSS'],
+    ['QVQLQQSGAELARPGASVKLSCKASGYTFTSYWMQWVKQRPGQGLEWIGAIYPGDGDTRYTQKFKGKATLTADKSSSTAYMQLSSLASEDSAVYYCARGGLRRGAWFAYWGQGTLVTVS']
+], columns = ['heavy_sequences'])
+
+meta_data = pd.Series(name=json.dumps({"Species":"Human", "Chain":"Heavy"}), dtype='object')
+
+meta_data.to_csv(custom_data_file, index=False)
+seq_df.to_csv(custom_data_file, index=False, mode='a')
+~~~
+
+After each custom_data_file has been created, each file needs to be pre-aligned and formatted into a single dataset.
+~~~python
+path_to_custom_db = "my_kasearch_db"
+many_custom_data_files = [custom_data_file]
+
+customDB = PrepareDB(db_path=path_to_custom_db, n_jobs=2, from_scratch=True)
+
+for num, data_file in enumerate(many_custom_data_files):
+    
+    customDB.prepare_sequences(
+        data_file,
+        file_id=num, 
+        chain='Heavy', # This needs to change depending on the custom data file
+        species='Human', # This needs to change depending on the custom data file
+        seq_column_name = 'heavy_sequences', # This needs to change depending on the custom data file
+    )
+    shutil.copy(data_file, os.path.join(path_to_custom_db, 'extra_data'))
+    
+customDB.finalize_prepared_files()
+~~~
+
+
+Finally, the pre-aligned custom dataset can be searched by providing its path when initiating the search.
+~~~python
+raw_queries = [
+    'VKLLEQSGAEVKKPGASVKVSCKASGYSFTSYGLHWVRQAPGQRLEWMGWISAGTGNTKYSQKFRGRVTFTRDTSATTAYMGLSSLRPEDTAVYYCARDPYGGGKSEFDYWGQGTLVTVSS',
+]
+
+results = EasySearch(
+    raw_queries, 
+    database_path=path_to_custom_db, 
+    allowed_chain='Any', 
+    allowed_species='Any',
+    regions=['whole'],
+    length_matched=[False],
+)
+~~~
+
 ---------
 
 

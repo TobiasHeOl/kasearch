@@ -110,12 +110,11 @@ def get_n_most_identical_multiquery(
     include_ends=True,
 ):
     
-    n = len(targets)-1 if len(targets) < n else n # Adjusts for large n's
-    
     seq_identity_matrix = calculate_seq_ids_multiquery(targets, query, region_masks, length_matched, include_ends)
     seq_identity_matrix[np.isnan(seq_identity_matrix)] = 0
 
-    position_of_n_best = np.argpartition(-seq_identity_matrix, n, axis=0)  # partition by seq_id
+    position_of_n_best = np.argpartition(-seq_identity_matrix, n-1, axis=0)  # partition by seq_id
+
     n_highest_identities = np.take_along_axis(seq_identity_matrix, position_of_n_best, axis=0)[:n]
 
     broadcasted_ids = np.broadcast_to(target_ids[:, None, None], (targets.shape[0], query.shape[0], region_masks.shape[0], 2))

@@ -42,6 +42,7 @@ class ExtractMetadata:
         """
         Get meta for all ids from a given study.
         """        
+        
         study_id, line_ids = idxs[0,0], idxs[:,1]
         study_file = self.id_to_study[study_id]
         
