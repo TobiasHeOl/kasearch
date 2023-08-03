@@ -3,7 +3,7 @@
 
 <div align="center">    
  
-# KA-Search: Rapid and exhaustive sequence identity search of known antibodies
+# KA-Search, a method for rapid and exhaustive sequence identity search of known antibodies
 
 ---
     
@@ -276,11 +276,11 @@ results = EasySearch(
 ### Citation
 
 ```
-@article{Olsen2022,
-  title={KA-Search: Rapid and exhaustive sequence identity search of known antibodies},
+@article{Olsen2023,
+  title={KA-Search, a method for rapid and exhaustive sequence identity search of known antibodies},
   author={Tobias H. Olsen, Brennan A. Kenyon, Iain H. Moal and Charlotte M. Deane},
-  journal={bioRxiv},
-  doi={10.1101/2022.11.01.513855},
-  year={2022}
+  journal={Scientific Reports},
+  doi={10.1038/s41598-023-38108-7},
+  year={2023}
 }
-```  
+``` 
