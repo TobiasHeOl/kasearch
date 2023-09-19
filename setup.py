@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 setup(
     name='kasearch',
-    version='0.0.19',
+    version='0.0.20',
     description='KA-Search: Rapid and exhaustive sequence identity search of known antibodies',
     license='BSD 3-clause license',
     maintainer='Tobias Hegelund Olsen; Brennan Abanades kenyon',

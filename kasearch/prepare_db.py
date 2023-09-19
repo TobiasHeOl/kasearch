@@ -101,8 +101,11 @@ class PrepareDB(TemporaryDataHolder):
         """
         
         os.makedirs(os.path.join(self.db_path, 'extra_data'), exist_ok=True)
-
-        self.id_to_study[file_id] = os.path.basename(sequence_file)
+        
+        if self.from_oas:
+            self.id_to_study[file_id] = sequence_file
+        else:
+            self.id_to_study[file_id] = os.path.basename(sequence_file)
         
         if sequence_numberings is None:
             sequences = pd.read_csv(sequence_file, header=1, usecols=[seq_column_name]).iloc[:,0].values
@@ -136,3 +139,8 @@ class PrepareDB(TemporaryDataHolder):
         
         with open(os.path.join(self.db_path, "id_to_study.txt"), "w") as handle: 
             handle.write(str(self.id_to_study))
+            
+            
+            
+            
+            

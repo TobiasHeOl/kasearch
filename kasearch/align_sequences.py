@@ -23,7 +23,7 @@ class AlignSequences:
         else:
             self.allowed_species = None
         
-    def _canonical_alignment(self, numbered_seq, from_oas=False):
+    def _canonical_alignment(self, numbered_seq):
         """Canonical alignment of ANARCI numberings.
         
         Parameters
@@ -38,7 +38,7 @@ class AlignSequences:
         """
         
         try:
-            if from_oas:
+            if self._from_oas:
                 return canonical_alignment_oas(numbered_seq)
             else:
                 return canonical_alignment(numbered_seq)
@@ -67,12 +67,16 @@ class AlignSequences:
             numbered_seqs = seqs
         else:
             numbered_seqs = number_many_at_once(seqs, allowed_species=self.allowed_species, strict=self.strict, ncpu=self.n_jobs)
-            
-        n_jobs = min(len(numbered_seqs), self.n_jobs)
-        chunksize = len(numbered_seqs) // n_jobs
         
-        with Pool(processes=n_jobs) as pool:
-            return np.array(pool.map(self._canonical_alignment, numbered_seqs, chunksize=chunksize))
+        
+        if self.n_jobs == 1:
+            return np.array([self._canonical_alignment(numbered_seq) for numbered_seq in numbered_seqs])
+        else:
+            n_jobs = min(len(numbered_seqs), self.n_jobs)
+            chunksize = len(numbered_seqs) // n_jobs
+
+            with Pool(processes=n_jobs) as pool:
+                return np.array(pool.map(self._canonical_alignment, numbered_seqs, chunksize=chunksize))
         
     def __call__(self, seqs):
         
