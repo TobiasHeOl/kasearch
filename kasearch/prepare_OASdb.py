@@ -52,7 +52,7 @@ class PrepareOASdb:
         
         id_to_study = {}
         for num, file in enumerate(data_unit_files):
-            id_to_study[num] = f"{self.public_path}{os.path.join('unpaired/', file.strip(local_oas_path))}"
+            id_to_study[num] = os.path.join(self.public_path, file.strip(local_oas_path))
             
         self.id_to_study = id_to_study
         
