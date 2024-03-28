@@ -45,22 +45,29 @@ class ExtractMetadata:
         
         study_id, line_ids = idxs[0,0], idxs[:,1]
         study_file = self.id_to_study[study_id]
+
+        # if "Bender_2020" in study_file: study_file = "blah.opig.stats.ox.ac.uk"
         
         if "opig.stats.ox.ac.uk" not in study_file: study_file = os.path.join(self.db_path, 'extra_data', study_file)
 
-        sequence_meta = pd.Series(json.loads(','.join(pd.read_csv(study_file, nrows=0).columns)))
-        sequence_data = pd.read_csv(
-            study_file, 
-            header=1, 
-            skiprows=[x+2 for x in range(line_ids.max()) if x not in line_ids], 
-            nrows=len(line_ids)
-        )        
+        try:
+            sequence_meta = pd.Series(json.loads(','.join(pd.read_csv(study_file, nrows=0).columns)))
+            sequence_data = pd.read_csv(
+                study_file, 
+                header=1, 
+                skiprows=[x+2 for x in range(line_ids.max()) if x not in line_ids], 
+                nrows=len(line_ids)
+            )        
 
-        for key in sequence_meta.keys():
-            sequence_data[key] = sequence_meta[key] 
+            for key in sequence_meta.keys():
+                sequence_data[key] = sequence_meta[key] 
 
-        sequence_data["rank"] = idxs[np.argsort(line_ids)][:,-1]
-        
+            sequence_data["rank"] = idxs[np.argsort(line_ids)][:,-1]
+
+        except:
+            print("Heavy chain data in Bender et al. 2020 has been removed from OAS due to contamination.")
+            sequence_data = pd.read_csv("blank_df.csv").fillna(0)
+
         return sequence_data
         
     def _extract_meta(self, idxs, n_jobs=1):
