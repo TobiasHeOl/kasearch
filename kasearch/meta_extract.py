@@ -2,6 +2,7 @@ import os
 import ast
 import json
 from joblib import Parallel, delayed
+import pkg_resources
 
 import pandas as pd
 import numpy as np
@@ -41,12 +42,20 @@ class ExtractMetadata:
     def _get_single_study_meta(self, idxs):
         """
         Get meta for all ids from a given study.
-        """        
-        
+        """
         study_id, line_ids = idxs[0,0], idxs[:,1]
         study_file = self.id_to_study[study_id]
         
         if "opig.stats.ox.ac.uk" not in study_file: study_file = os.path.join(self.db_path, 'extra_data', study_file)
+
+        if "Bender_2020" in study_file:
+            # This is only relevant for versions of OASdb which still include Bender_2020
+            print("""Heavy chain data in Bender et al. 2020 has been removed from OAS due to contamination.
+Metadata from matches to Bender et al. 2020 sequences therefore return NaN. Either increase 'keep_best_n' 
+or use a newer OASdb.""")
+            sequence_data = pd.read_csv(pkg_resources.resource_filename(__name__, 'blank_df.csv'))
+
+            return sequence_data.reindex(list(range(len(line_ids)))).reset_index(drop=True)
 
         sequence_meta = pd.Series(json.loads(','.join(pd.read_csv(study_file, nrows=0).columns)))
         sequence_data = pd.read_csv(
@@ -60,7 +69,7 @@ class ExtractMetadata:
             sequence_data[key] = sequence_meta[key] 
 
         sequence_data["rank"] = idxs[np.argsort(line_ids)][:,-1]
-        
+
         return sequence_data
         
     def _extract_meta(self, idxs, n_jobs=1):
